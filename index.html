@@ -85,58 +85,117 @@
 
 <script>
 const trip = [
-  {date:'2026-09-15', city:'Venice', title:'Arrival in Venice', events:[
-    {time:'10:00 AM', title:'Arrive in Venice', note:'Transfer from the airport to Rio Hotel. Alilaguna water bus is the likely option.'},
-    {time:'Afternoon', title:'Check in and explore', note:'Easy first-day walk around St. Mark’s Square and nearby canals.'},
-    {time:'Evening', title:'Relaxed Venice evening', note:'Keep this light after the overnight flight.'}
+  {date:'2026-09-15', city:'Venice', title:'Arrival and St. Mark’s evening', events:[
+    {time:'10:00 AM', title:'Arrive at Venice Marco Polo Airport', note:'Collect luggage and follow signs for water transport.'},
+    {time:'11:15 AM', title:'Alilaguna transfer toward San Marco', note:'Use the airport water bus and walk from the nearest stop to Rio Hotel. Keep the hotel address available offline.', map:'https://www.google.com/maps/search/?api=1&query=Rio+Hotel+Venice'},
+    {time:'1:00 PM', title:'Drop bags / check in at Rio Hotel', note:'Freshen up and keep lunch close to the hotel.'},
+    {time:'2:30 PM', title:'St. Mark’s Square orientation walk', note:'See Piazza San Marco, the exterior of the Basilica, Doge’s Palace waterfront, Bridge of Sighs viewpoint, and Riva degli Schiavoni.', map:'https://www.google.com/maps/search/?api=1&query=Piazza+San+Marco+Venice'},
+    {time:'5:30 PM', title:'Slow canal walk and early dinner', note:'Stay close to the hotel and avoid overplanning after the overnight flight.'},
+    {time:'Evening', title:'Optional nighttime St. Mark’s stroll', note:'The square is especially atmospheric after day-trip crowds leave.'}
   ]},
-  {date:'2026-09-16', city:'Venice', title:'Full Venice day', events:[
-    {time:'Morning', title:'Central Venice sightseeing', note:'St. Mark’s area, Rialto, canals, and neighborhoods.'},
-    {time:'Evening', title:'Gondola or scenic walk', note:'Best kept flexible depending on weather and energy.'}
+  {date:'2026-09-16', city:'Venice', title:'Classic Venice and neighborhood walk', events:[
+    {time:'8:00 AM', title:'Breakfast near the hotel', note:'Start before the busiest sightseeing period.'},
+    {time:'9:00 AM', title:'St. Mark’s Basilica area', note:'Visit the basilica and/or Doge’s Palace if tickets are booked; otherwise enjoy the square and waterfront.'},
+    {time:'12:00 PM', title:'Walk toward Rialto Bridge', note:'Take the scenic lanes rather than the fastest route.', map:'https://www.google.com/maps/search/?api=1&query=Rialto+Bridge+Venice'},
+    {time:'1:00 PM', title:'Lunch around Rialto or San Polo', note:'Allow time to wander the market streets and canals.'},
+    {time:'3:00 PM', title:'Explore San Polo and Dorsoduro', note:'Cross quieter bridges, visit Campo Santa Margherita, and continue toward the Accademia Bridge.'},
+    {time:'6:30 PM', title:'Dinner and sunset canals', note:'Return toward San Marco at a relaxed pace.'},
+    {time:'8:30 PM', title:'Optional gondola ride', note:'Evening is more romantic; daytime provides clearer photos. Choose based on weather and energy.'}
   ]},
-  {date:'2026-09-17', city:'Florence', title:'Train to Florence', events:[
-    {time:'9:26 AM', title:'Frecciarossa 9411', note:'Venice → Florence. Arrives Firenze SMN at 11:39 AM.'},
-    {time:'12:00 PM', title:'Check in', note:'B&B A Florence View, next to the Duomo.'},
-    {time:'Afternoon', title:'Historic center walk', note:'Duomo area, Piazza della Signoria, Ponte Vecchio.'}
+  {date:'2026-09-17', city:'Florence', title:'Train to Florence and historic center', events:[
+    {time:'8:15 AM', title:'Leave Rio Hotel for Venezia Santa Lucia', note:'Allow extra time for walking and vaporetto connections with luggage.', map:'https://www.google.com/maps/search/?api=1&query=Venezia+Santa+Lucia'},
+    {time:'9:26 AM', title:'Frecciarossa 9411 to Florence', note:'Booked train. Arrives Firenze Santa Maria Novella at 11:39 AM.'},
+    {time:'11:50 AM', title:'Walk to B&B A Florence View', note:'The hotel is beside the Duomo; leave bags if the room is not ready.', map:'https://www.google.com/maps/search/?api=1&query=B%26B+A+Florence+View'},
+    {time:'12:30 PM', title:'Lunch near the Duomo', note:'Keep lunch easy before the first walking loop.'},
+    {time:'2:00 PM', title:'Florence historic-center walk', note:'Duomo exterior → Piazza della Repubblica → Piazza della Signoria → Loggia dei Lanzi → Ponte Vecchio.', map:'https://www.google.com/maps/dir/?api=1&origin=Florence+Cathedral&destination=Ponte+Vecchio&waypoints=Piazza+della+Repubblica%7CPiazza+della+Signoria'},
+    {time:'5:00 PM', title:'Oltrarno wander', note:'Cross the Arno for artisan streets and a calmer atmosphere.'},
+    {time:'7:00 PM', title:'Dinner in central Florence', note:'Finish near the hotel so the next morning stays easy.'}
   ]},
-  {date:'2026-09-18', city:'Florence', title:'Florence museums and Duomo', events:[
-    {time:'Morning', title:'Accademia / Duomo', note:'Final order depends on your timed-entry reservations.'},
-    {time:'Afternoon', title:'Uffizi Gallery', note:'Allow roughly 2–3 hours.'},
-    {time:'Evening', title:'Sunset viewpoint', note:'Piazzale Michelangelo is a strong option.'}
+  {date:'2026-09-18', city:'Florence', title:'Accademia, Duomo climb and Uffizi', events:[
+    {time:'7:30 AM', title:'Breakfast near the Duomo', note:'Leave enough time to walk to the Accademia entrance.'},
+    {time:'8:30 AM', title:'Accademia Gallery timed entry', note:'See Michelangelo’s David first, then the Prisoners and remaining galleries. About 60–90 minutes.', map:'https://www.google.com/maps/search/?api=1&query=Galleria+dell%27Accademia+Florence'},
+    {time:'9:45 AM', title:'Walk back toward the Duomo', note:'Arrive early for the climb check-in and security.'},
+    {time:'10:00 AM', title:'Brunelleschi’s Dome climb', note:'Timed climb. Expect 463 steps, narrow passages, and excellent city views.', map:'https://www.google.com/maps/search/?api=1&query=Brunelleschi%27s+Dome+Florence'},
+    {time:'11:30 AM', title:'Duomo complex / recovery break', note:'Use the surrounding time for the cathedral, baptistery, museum, or a coffee depending on ticket coverage and energy.'},
+    {time:'12:30 PM', title:'Lunch', note:'Sit down and recharge before the Uffizi.'},
+    {time:'2:45 PM', title:'Uffizi Gallery timed entry', note:'Allow around 2–3 hours. Prioritize Botticelli, Leonardo, Michelangelo, Raphael, and the Arno views.', map:'https://www.google.com/maps/search/?api=1&query=Uffizi+Gallery'},
+    {time:'6:00 PM', title:'Aperitivo or early dinner', note:'Keep the evening flexible after a museum-heavy day.'},
+    {time:'Sunset', title:'Optional Piazzale Michelangelo', note:'Go only if energy is good; otherwise save the viewpoint for another trip.', map:'https://www.google.com/maps/search/?api=1&query=Piazzale+Michelangelo'}
   ]},
-  {date:'2026-09-19', city:'Florence', title:'Tuscany wine experience', events:[
-    {time:'Morning', title:'Free Florence time', note:'Keep the morning relaxed before the tour.'},
-    {time:'2:30 PM', title:'Wine Experience in Tuscany', note:'Booked with Prestige Rent.'}
+  {date:'2026-09-19', city:'Florence', title:'Relaxed morning and Tuscany wine tour', events:[
+    {time:'8:30 AM', title:'Leisurely breakfast', note:'No need to rush after the previous full day.'},
+    {time:'10:00 AM', title:'Flexible Florence morning', note:'Use this for shopping, Mercato Centrale, Santa Croce, Palazzo Pitti, or anything missed.'},
+    {time:'12:15 PM', title:'Early lunch', note:'Eat before the wine experience and return to the hotel if needed.'},
+    {time:'1:45 PM', title:'Walk to the tour meeting point', note:'Keep the booking voucher and meeting address ready.'},
+    {time:'2:15 PM', title:'Tour check-in', note:'Arrive about 15 minutes before departure.'},
+    {time:'2:30 PM', title:'Wine Experience in Tuscany', note:'Booked with Prestige Rent. Expect countryside scenery, winery visits, tastings, and a return to Florence in the evening.'},
+    {time:'Evening', title:'Return to Florence', note:'Plan only a light snack or late dinner after the tour.'}
   ]},
-  {date:'2026-09-20', city:'Rome', title:'Train to Rome', events:[
-    {time:'10:03 AM', title:'Italo 8953', note:'Florence → Rome. Arrives at 11:40 AM.'},
-    {time:'Afternoon', title:'Check in and historic center', note:'Temple View GuestHouse. Explore Pantheon, Trevi Fountain, and nearby piazzas.'}
+  {date:'2026-09-20', city:'Rome', title:'Train to Rome and historic-center walk', events:[
+    {time:'9:15 AM', title:'Leave hotel for Firenze SMN', note:'The station is walkable, but allow time with luggage.'},
+    {time:'10:03 AM', title:'Italo 8953 to Rome', note:'Booked train. Arrives Roma Termini at 11:40 AM.'},
+    {time:'12:00 PM', title:'Transfer to Temple View GuestHouse', note:'Drop bags or check in, then have lunch nearby.', map:'https://www.google.com/maps/search/?api=1&query=Temple+View+GuestHouse+Rome'},
+    {time:'2:00 PM', title:'Pantheon and Piazza Navona', note:'Begin with an easy historic-center loop close to the hotel.', map:'https://www.google.com/maps/dir/?api=1&origin=Pantheon+Rome&destination=Piazza+Navona'},
+    {time:'4:00 PM', title:'Trevi Fountain and Spanish Steps', note:'Continue on foot with gelato or coffee along the way.', map:'https://www.google.com/maps/dir/?api=1&origin=Trevi+Fountain&destination=Spanish+Steps'},
+    {time:'7:00 PM', title:'Dinner in central Rome', note:'Avoid making the arrival day too demanding.'}
   ]},
-  {date:'2026-09-21', city:'Rome', title:'Ancient Rome', events:[
-    {time:'TBD', title:'Colosseum, Forum and Palatine Hill', note:'Target date for your official Colosseum ticket. Exact entry time still to be added.'}
+  {date:'2026-09-21', city:'Rome', title:'Ancient Rome day', events:[
+    {time:'8:00 AM', title:'Breakfast and walk toward the Colosseum', note:'Leave enough time for entry security.'},
+    {time:'Ticket time TBD', title:'Colosseum full-experience entry', note:'Planned official-ticket day. Use the exact entry time once purchased; arena/underground access depends on the ticket selected.', map:'https://www.google.com/maps/search/?api=1&query=Colosseum+Rome'},
+    {time:'After entry', title:'Roman Forum and Palatine Hill', note:'Allow approximately 2–3 additional hours and wear comfortable shoes.'},
+    {time:'1:30 PM', title:'Lunch near Monti', note:'Take a proper break after the archaeological area.'},
+    {time:'3:30 PM', title:'Capitoline Hill and Piazza Venezia', note:'Walk toward the Capitoline viewpoints and explore the surrounding monuments.'},
+    {time:'6:30 PM', title:'Dinner in Monti or Trastevere', note:'Choose based on energy; Trastevere is livelier and farther.'}
   ]},
-  {date:'2026-09-22', city:'Rome', title:'Vatican City', events:[
-    {time:'9:00 AM', title:'Vatican Museums', note:'Timed entry confirmed.'},
-    {time:'1:30 PM', title:'St. Peter’s Basilica', note:'Ticket confirmed with lift access.'}
+  {date:'2026-09-22', city:'Rome', title:'Vatican Museums and St. Peter’s Basilica', events:[
+    {time:'7:30 AM', title:'Breakfast and transfer to Vatican City', note:'Arrive well ahead of the timed entry.'},
+    {time:'8:30 AM', title:'Arrive at Vatican Museums entrance', note:'Use the ticket-holder line and have identification available.'},
+    {time:'9:00 AM', title:'Vatican Museums timed entry', note:'Confirmed. Prioritize the Gallery of Maps, Raphael Rooms, and Sistine Chapel.', map:'https://www.google.com/maps/search/?api=1&query=Vatican+Museums+Entrance'},
+    {time:'12:00 PM', title:'Lunch / transition break', note:'Allow time to exit the museums and reach St. Peter’s area.'},
+    {time:'1:15 PM', title:'Arrive for St. Peter’s booking', note:'Check the voucher’s exact meeting point.'},
+    {time:'1:30 PM', title:'St. Peter’s Basilica with lift access', note:'Confirmed. The lift reduces—but does not eliminate—the stairs for the dome. Enjoy the dome and basilica at a comfortable pace.', map:'https://www.google.com/maps/search/?api=1&query=St+Peter%27s+Basilica'},
+    {time:'4:30 PM', title:'St. Peter’s Square and riverside walk', note:'Continue toward Castel Sant’Angelo if energy allows.'},
+    {time:'Evening', title:'Relaxed dinner', note:'This is a long standing-and-walking day.'}
   ]},
-  {date:'2026-09-23', city:'Rome', title:'Flexible Rome day', events:[
-    {time:'Morning', title:'Open sightseeing block', note:'Can be used for anything missed, Borghese, Trastevere, or a second ancient-Rome date.'}
+  {date:'2026-09-23', city:'Rome', title:'Flexible Rome highlights day', events:[
+    {time:'9:00 AM', title:'Campo de’ Fiori and Jewish Ghetto', note:'Start near the hotel with a relaxed market and neighborhood walk.'},
+    {time:'11:00 AM', title:'Aventine Hill', note:'See the Orange Garden and keyhole viewpoint.', map:'https://www.google.com/maps/search/?api=1&query=Orange+Garden+Rome'},
+    {time:'1:00 PM', title:'Lunch', note:'Choose Testaccio, Trastevere, or central Rome.'},
+    {time:'3:00 PM', title:'Free-choice block', note:'Use this for anything missed, Borghese Gallery if booked, shopping, Villa Borghese, or additional historic-center time.'},
+    {time:'6:00 PM', title:'Trastevere evening', note:'Walk the lanes, enjoy dinner, and return at a comfortable time.', map:'https://www.google.com/maps/search/?api=1&query=Trastevere+Rome'}
   ]},
-  {date:'2026-09-24', city:'Naples', title:'Train to Naples', events:[
-    {time:'9:41 AM', title:'Italo 9967', note:'Rome → Naples. Arrives at 10:53 AM.'},
-    {time:'Late morning', title:'Check in', note:'Napolinn B&B.'},
-    {time:'Afternoon', title:'Explore Naples', note:'Historic center, pizza, and waterfront depending on energy.'}
+  {date:'2026-09-24', city:'Naples', title:'Train to Naples and historic center', events:[
+    {time:'8:45 AM', title:'Leave Temple View GuestHouse', note:'Head to Roma Termini with luggage and buffer time.'},
+    {time:'9:41 AM', title:'Italo 9967 to Naples', note:'Booked train. Arrives Napoli Centrale at 10:53 AM.'},
+    {time:'11:15 AM', title:'Transfer to Napolinn B&B', note:'Drop bags or check in.', map:'https://www.google.com/maps/search/?api=1&query=Napolinn+B%26B+Naples'},
+    {time:'12:30 PM', title:'Neapolitan pizza lunch', note:'Make the first meal in Naples a simple local classic.'},
+    {time:'2:00 PM', title:'Historic-center walk', note:'Spaccanapoli → Santa Chiara → Via dei Tribunali → Sansevero area.', map:'https://www.google.com/maps/dir/?api=1&origin=Santa+Chiara+Naples&destination=Via+dei+Tribunali'},
+    {time:'5:30 PM', title:'Via Toledo and Spanish Quarter', note:'Continue toward Galleria Umberto I and Piazza del Plebiscito if energy allows.'},
+    {time:'7:30 PM', title:'Dinner and early night', note:'Prepare ferry items for Capri before sleeping.'}
   ]},
-  {date:'2026-09-25', city:'Capri', title:'Capri day trip', events:[
-    {time:'Morning', title:'Ferry Naples → Capri', note:'Final ferry time and ticket details to be added.'},
-    {time:'2:00 PM', title:'Small-group boat tour', note:'Booked. Grottoes, swimming, and limoncello.'},
-    {time:'6:00 PM', title:'Return ferry', note:'You planned around a 6:00 PM return.'}
+  {date:'2026-09-25', city:'Capri', title:'Capri exploration and swimming boat tour', events:[
+    {time:'6:30 AM', title:'Leave for Molo Beverello', note:'Bring swimsuit, towel, sunscreen, water shoes, and ferry/boat confirmations.', map:'https://www.google.com/maps/search/?api=1&query=Molo+Beverello+Naples'},
+    {time:'7:35 AM', title:'SNAV ferry Naples → Capri', note:'Planned ferry from Napoli Beverello.'},
+    {time:'8:05 AM', title:'Arrive Marina Grande, Capri', note:'Orient yourself and confirm the afternoon boat-tour meeting point.', map:'https://www.google.com/maps/search/?api=1&query=Marina+Grande+Capri'},
+    {time:'8:30 AM', title:'Optional Blue Grotto attempt', note:'Go early because access depends on sea conditions and queues. Local rowboats collect the separate entrance fee.'},
+    {time:'10:30 AM', title:'Capri town and viewpoints', note:'Take the funicular or bus to Capri town, then explore the Piazzetta and nearby scenic lanes.'},
+    {time:'12:00 PM', title:'Early lunch', note:'Eat before returning to Marina Grande for the boat tour.'},
+    {time:'1:30 PM', title:'Check in for boat tour', note:'Arrive at the meeting point about 20–30 minutes early.'},
+    {time:'2:00 PM', title:'Small-group grottoes boat tour', note:'Booked. Priorities are coastal exploration and swimming; includes limoncello. Sea conditions determine swim stops.'},
+    {time:'5:00 PM', title:'Return to Marina Grande', note:'Change, collect belongings, and proceed directly to the ferry area.'},
+    {time:'5:40 PM', title:'Return ferry Capri → Naples', note:'Use the confirmed ferry time from the latest plan; do not rely on a later 6:00 PM departure.'}
   ]},
-  {date:'2026-09-26', city:'Naples', title:'Pompeii and Vesuvius', events:[
-    {time:'TBD', title:'Pompeii + Mt. Vesuvius tour', note:'Booked. Add the final meeting point and departure time from the confirmation.'}
+  {date:'2026-09-26', city:'Naples', title:'Pompeii and Mt. Vesuvius tour', events:[
+    {time:'Morning · confirm voucher', title:'Meet the booked tour', note:'Pompeii + Mt. Vesuvius tour is confirmed. Add the exact pickup/meeting time and location from the booking voucher.'},
+    {time:'Morning', title:'Guided Pompeii visit', note:'Expect uneven stone streets; wear supportive shoes and bring sun protection.', map:'https://www.google.com/maps/search/?api=1&query=Pompeii+Archaeological+Park'},
+    {time:'Midday', title:'Italian light lunch or wine-tasting portion', note:'Follow the option shown on your final confirmation.'},
+    {time:'Afternoon', title:'Mt. Vesuvius experience', note:'Weather and volcanic-access rules can affect the summit portion. Bring a light layer and water.', map:'https://www.google.com/maps/search/?api=1&query=Mount+Vesuvius'},
+    {time:'Evening', title:'Final dinner in Naples', note:'Keep luggage packed for the very early departure.'}
   ]},
-  {date:'2026-09-27', city:'Naples', title:'Departure', events:[
-    {time:'7:40 AM', title:'Flight home', note:'Plan a very early airport transfer from Napolinn B&B.'}
+  {date:'2026-09-27', city:'Naples', title:'Early departure home', events:[
+    {time:'Around 4:30 AM', title:'Leave Napolinn B&B for the airport', note:'Arrange a taxi or private transfer in advance because public transport is limited this early.'},
+    {time:'5:00 AM', title:'Arrive at Naples Airport', note:'Target roughly 2.5 hours before the international departure unless the airline advises differently.'},
+    {time:'7:40 AM', title:'Flight home', note:'Trip complete.'}
   ]}
 ];
 
@@ -146,19 +205,25 @@ const bookings = [
   ['Rome hotel','Temple View GuestHouse','Sep 20–24'],
   ['Naples hotel','Napolinn B&B','Sep 24–27'],
   ['Train','Frecciarossa 9411','Sep 17 · 9:26 AM'],
+  ['Ticket','Accademia Gallery','Sep 18 · 8:30 AM'],
+  ['Ticket','Brunelleschi’s Dome climb','Sep 18 · 10:00 AM'],
+  ['Ticket','Uffizi Gallery','Sep 18 · 2:45 PM'],
   ['Train','Italo 8953','Sep 20 · 10:03 AM'],
   ['Train','Italo 9967','Sep 24 · 9:41 AM'],
-  ['Tour','Wine Experience in Tuscany','Sep 19 · 2:30 PM'],
+  ['Tour','Wine Experience in Tuscany','Sep 19 · check-in 2:15 PM'],
   ['Ticket','Vatican Museums','Sep 22 · 9:00 AM'],
   ['Ticket','St. Peter’s Basilica + lift','Sep 22 · 1:30 PM'],
+  ['Ferry','SNAV Naples → Capri','Sep 25 · 7:35 AM'],
   ['Tour','Capri small-group boat tour','Sep 25 · 2:00 PM'],
-  ['Tour','Pompeii + Mt. Vesuvius','Sep 26 · time TBD']
+  ['Ferry','Capri → Naples','Sep 25 · 5:40 PM'],
+  ['Tour','Pompeii + Mt. Vesuvius','Sep 26 · meeting time TBD'],
+  ['Ticket','Colosseum full experience','Sep 21 · entry time TBD']
 ];
 
 const fmt = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 function renderDay(day, open=false){
   const id='d'+day.date;
-  const events=day.events.map(e=>`<div class="event"><div class="time">${e.time}</div><div><div class="event-title">${e.title}</div><div class="event-note">${e.note}</div></div></div>`).join('');
+  const events=day.events.map(e=>`<div class="event"><div class="time">${e.time}</div><div><div class="event-title">${e.title}</div><div class="event-note">${e.note}</div>${e.map?`<div class="actions"><a class="link" href="${e.map}" target="_blank" rel="noopener">Open in Maps</a></div>`:''}</div></div>`).join('');
   return `<article class="day ${open?'open':''}"><button class="day-head" aria-expanded="${open}"><div><div class="day-title">${fmt(day.date)} · ${day.title}</div><div class="day-city">${day.city}</div></div><span>⌄</span></button><div class="day-body">${events}<label class="checkrow"><input type="checkbox" data-check="${id}" ${localStorage.getItem(id)==='1'?'checked':''}><span><b>Mark day complete</b><div class="small">Saved on this device.</div></span></label></div></article>`;
 }
 
