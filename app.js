@@ -316,11 +316,11 @@ async function renderWallet(){
   qs("#wallet").innerHTML=`
     <div class="wallet-hero">
       <div>
-        <div class="focus-label">TRAVEL DOCUMENTS</div>
+        <div class="focus-label">PRIVATE TRAVEL WALLET</div>
         <h2>Wallet</h2>
-        <p>Tickets, vouchers and confirmations in one place.</p>
+        <p>Your locally saved tickets, vouchers and confirmations.</p>
       </div>
-      <div class="wallet-ready-ring"><strong>${ready+imported.length}</strong><span>ready</span></div>
+      <div class="wallet-ready-ring"><strong>${imported.length}</strong><span>saved</span></div>
     </div>
 
     <div class="wallet-actions-top">
@@ -328,7 +328,7 @@ async function renderWallet(){
     </div>
 
     <div class="wallet-summary polished">
-      <div><strong>${ready}</strong><span>Embedded</span></div>
+      <div><strong>${ready}</strong><span>Booked</span></div>
       <div><strong>${imported.length}</strong><span>On this iPhone</span></div>
       <div><strong>${pending}</strong><span>Still needed</span></div>
     </div>
@@ -366,12 +366,7 @@ async function renderWallet(){
           </div>
           ${item.details?`<div class="wallet-details">${item.details}</div>`:""}
           ${item.note?`<div class="wallet-note">${item.note}</div>`:""}
-          ${(item.documents||[]).length?`<div class="wallet-document-count">${item.documents.length} document${item.documents.length===1?"":"s"} available</div>`:""}
-          <div class="wallet-actions">
-            ${(item.documents||[]).map((doc,index)=>`<a class="${doc.primary||index===0?"primary":"secondary"} wallet-file-button" href="${doc.file}" target="_blank" rel="noopener">${doc.label}</a>`).join("")}
-            ${item.map?`<a class="secondary wallet-file-button" href="${item.map}" target="_blank" rel="noopener">${item.mapLabel||"Open Maps"}</a>`:""}
-            ${!(item.documents||[]).length?`<button class="secondary wallet-file-button" disabled>Document not added</button>`:""}
-          </div>
+          ${item.map?`<div class="wallet-actions"><a class="secondary wallet-file-button" href="${item.map}" target="_blank" rel="noopener">${item.mapLabel||"Open Maps"}</a></div>`:""}
           <div class="wallet-private-attachment">
             <div class="wallet-private-head">
               <div><strong>Private file on this iPhone</strong><small>${(linkedByKey[walletItemKey(group.group,item)]||[]).length?`${(linkedByKey[walletItemKey(group.group,item)]||[]).length} attached`:"No private file attached"}</small></div>
