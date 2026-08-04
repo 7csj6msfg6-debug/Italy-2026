@@ -509,3 +509,56 @@ textarea{min-height:140px;resize:vertical}
 .maps-paste-box .ticket-field{margin:0}
 .maps-paste-box button{width:100%;margin-top:9px;min-height:44px}
 .maps-paste-box small{display:block;margin-top:8px;color:var(--muted);font-size:12px;line-height:1.4}
+
+
+/* Today date and trip countdown */
+.today-date-strip{
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(130px,.65fr);
+  gap:10px;
+  margin-bottom:12px;
+}
+.today-current-date,.today-countdown{
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:var(--surface);
+  padding:14px;
+}
+.today-current-date span,.today-countdown span{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.today-current-date strong{
+  display:block;
+  margin-top:6px;
+  font-size:17px;
+  line-height:1.25;
+}
+.today-countdown{
+  background:var(--accent-soft);
+  border-color:rgba(47,112,88,.2);
+}
+.today-countdown strong{
+  display:block;
+  color:var(--accent);
+  font-size:25px;
+  line-height:1;
+  margin-bottom:5px;
+}
+.today-countdown small{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.3;
+  margin-top:5px;
+}
+@media(max-width:430px){
+  .today-date-strip{grid-template-columns:1fr}
+  .today-countdown{display:grid;grid-template-columns:auto 1fr;column-gap:9px;align-items:end}
+  .today-countdown strong{grid-row:1 / span 2;margin:0}
+  .today-countdown small{grid-column:2;margin-top:3px}
+}

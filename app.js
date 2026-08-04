@@ -235,6 +235,27 @@ function getTodayScreenDate(){
 function setTodayScreenDate(date){
   try{localStorage.setItem(P+"today-preview-date",date)}catch{}
 }
+function todayDateLabel(date=new Date()){
+  return new Intl.DateTimeFormat("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).format(date);
+}
+function tripCountdown(){
+  const start=new Date(2026,8,15);
+  const end=new Date(2026,8,27);
+  const now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const dayMs=86400000;
+  if(today<start){
+    const days=Math.ceil((start-today)/dayMs);
+    return {value:days,label:days===1?"day until Italy":"days until Italy",message:"Departure · September 15, 2026"};
+  }
+  if(today<=end){
+    const tripDay=Math.floor((today-start)/dayMs)+1;
+    const remaining=Math.max(0,Math.floor((end-today)/dayMs));
+    return {value:`Day ${tripDay}`,label:"of your Italy trip",message:remaining===0?"Final day · September 27":"Trip in progress"};
+  }
+  const daysSince=Math.floor((today-end)/dayMs);
+  return {value:"Complete",label:"Italy 2026",message:daysSince===1?"Trip ended yesterday":`Trip ended ${daysSince} days ago`};
+}
 function renderHome(selectedDate){
   const actual=todayISO();
   const date=selectedDate||getTodayScreenDate();
@@ -249,8 +270,14 @@ function renderHome(selectedDate){
   const isActual=day.date===actual;
   const label=duringTrip&&isActual?"TODAY":duringTrip?"TRIP DAY PREVIEW":"PREVIEW YOUR TRIP DAY";
   const nextIndex=next?next.index:-1;
+  const countdown=tripCountdown();
 
   qs("#home").innerHTML=`
+    <section class="today-date-strip">
+      <div class="today-current-date"><span>CURRENT DATE</span><strong>${todayDateLabel()}</strong></div>
+      <div class="today-countdown"><strong>${countdown.value}</strong><span>${countdown.label}</span><small>${countdown.message}</small></div>
+    </section>
+
     <section class="today-hero">
       <div class="today-hero-top">
         <div>
