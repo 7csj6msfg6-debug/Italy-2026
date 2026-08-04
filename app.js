@@ -216,72 +216,116 @@ function renderRouteMode(){
   }
 }
 
-function renderHome(){
-  const day=trip.find(d=>d.date===todayISO());
+function todayHotelForDate(date){
+  if(date>="2026-09-15"&&date<="2026-09-16")return hotels.find(h=>h[0]==="Venice");
+  if(date>="2026-09-17"&&date<="2026-09-19")return hotels.find(h=>h[0]==="Florence");
+  if(date>="2026-09-20"&&date<="2026-09-23")return hotels.find(h=>h[0]==="Rome");
+  if(date>="2026-09-24"&&date<="2026-09-26")return hotels.find(h=>h[0]==="Naples");
+  return null;
+}
+function getTodayScreenDate(){
+  const actual=todayISO();
+  if(trip.some(d=>d.date===actual))return actual;
+  try{
+    const saved=localStorage.getItem(P+"today-preview-date");
+    if(saved&&trip.some(d=>d.date===saved))return saved;
+  }catch{}
+  return trip[0].date;
+}
+function setTodayScreenDate(date){
+  try{localStorage.setItem(P+"today-preview-date",date)}catch{}
+}
+function renderHome(selectedDate){
+  const actual=todayISO();
+  const date=selectedDate||getTodayScreenDate();
+  const day=trip.find(d=>d.date===date)||trip[0];
+  setTodayScreenDate(day.date);
+  const dayIndex=trip.findIndex(d=>d.date===day.date);
   const next=nextEventForDay(day);
-  const stats=tripStats();
-  const booked=wallet.flatMap(g=>g.items).filter(x=>x.status==="Booked").length;
-  const pending=wallet.flatMap(g=>g.items).filter(x=>x.status==="To book").length;
-  const upcoming=upcomingBooked();
-  const start=new Date("2026-09-14T00:00:00"),end=new Date("2026-09-27T23:59:59"),now=new Date();
-  const diff=Math.ceil((start-now)/86400000);
-  const status=now<start?`${diff} days until departure`:now<=end?"Your Italy trip is underway":"Trip completed";
+  const completed=day.events.filter((e,i)=>isDone(eventId(day,e,i))).length;
+  const pct=Math.round(completed/day.events.length*100);
+  const hotel=todayHotelForDate(day.date);
+  const duringTrip=trip.some(d=>d.date===actual);
+  const isActual=day.date===actual;
+  const label=duringTrip&&isActual?"TODAY":duringTrip?"TRIP DAY PREVIEW":"PREVIEW YOUR TRIP DAY";
+  const nextIndex=next?next.index:-1;
 
   qs("#home").innerHTML=`
-    <section class="hero">
-      <div class="kicker">SEPTEMBER 14–27, 2026</div>
-      <div class="headline">${day?`Today in ${day.city}`:"Venice → Florence → Rome → Naples"}</div>
-      <div class="route">${day?day.title:"A personalized two-week Italy journey"}</div>
-      <div class="countdown">${status}</div>
+    <section class="today-hero">
+      <div class="today-hero-top">
+        <div>
+          <div class="kicker">${label}</div>
+          <div class="headline">${day.city}</div>
+          <div class="route">${fmtDate(day.date)} · ${day.title}</div>
+        </div>
+        <div class="today-day-number"><strong>${dayIndex+1}</strong><span>of ${trip.length}</span></div>
+      </div>
+      <div class="today-day-picker">
+        <button class="today-arrow" id="todayPrev" ${dayIndex===0?"disabled":""} aria-label="Previous day">‹</button>
+        <select id="todayDaySelect" aria-label="Choose trip day">
+          ${trip.map(d=>`<option value="${d.date}" ${d.date===day.date?"selected":""}>${shortDate(d.date)} — ${d.city}</option>`).join("")}
+        </select>
+        <button class="today-arrow" id="todayNext" ${dayIndex===trip.length-1?"disabled":""} aria-label="Next day">›</button>
+      </div>
     </section>
 
-    <div class="dashboard-grid">
-      <div class="metric"><div class="metric-label">Booked items</div><div class="metric-value">${booked}</div><div class="metric-sub">Flights, trains, tours</div></div>
-      <div class="metric"><div class="metric-label">Still to book</div><div class="metric-value">${pending}</div><div class="metric-sub">Reservations remaining</div></div>
-      <div class="metric"><div class="metric-label">Trip progress</div><div class="metric-value">${stats.pct}%</div><div class="metric-sub">${stats.done} activities complete</div></div>
-      <div class="metric"><div class="metric-label">Destinations</div><div class="metric-value">5</div><div class="metric-sub">4 cities + Capri</div></div>
+    ${next?`<section class="today-next-card">
+      <div class="today-next-top"><div class="focus-label">${isActual?"UP NEXT":"FIRST UNFINISHED STOP"}</div><span>${nextIndex+1} of ${day.events.length}</span></div>
+      <div class="today-next-time">${next.event.time}</div>
+      <div class="today-next-title">${next.event.title}</div>
+      <div class="today-next-note">${next.event.note}</div>
+      ${next.event.status?`<span class="badge ${badgeClass(next.event.status)}">${next.event.status}</span>`:""}
+      <div class="today-primary-actions">
+        ${next.event.map?`<a class="primary" href="${next.event.map}" target="_blank" rel="noopener">Open Maps</a>`:""}
+        <button class="secondary" data-home-route="${day.date}">Route Mode</button>
+        <button class="secondary" data-jump="wallet">Wallet</button>
+      </div>
+    </section>`:`<div class="route-complete-banner"><strong>Day complete ✓</strong><div class="small">Every stop for this day is marked complete.</div></div>`}
+
+    <section class="today-glance">
+      <div class="today-glance-card"><span>Progress</span><strong>${completed}/${day.events.length}</strong><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>
+      <div class="today-glance-card"><span>Tonight</span><strong>${hotel?hotel[1]:day.city==="Flights"?"Travel day":"—"}</strong><small>${hotel?hotel[0]:day.title}</small></div>
+    </section>
+
+    <div class="today-tools">
+      <button class="today-tool" data-jump="wallet"><span>▣</span><div><strong>Ticket Wallet</strong><small>Open private tickets</small></div></button>
+      <button class="today-tool" data-open="currency"><span>€</span><div><strong>Currency</strong><small>EUR ↔ USD</small></div></button>
+      ${hotel?`<a class="today-tool" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel[1]+" "+hotel[0])}" target="_blank" rel="noopener"><span>⌖</span><div><strong>Hotel Maps</strong><small>${hotel[1]}</small></div></a>`:""}
     </div>
 
-    ${day&&next?`
-      <div class="focus-card">
-        <div class="focus-label">Next activity</div>
-        <div class="focus-title">${next.event.title}</div>
-        <div class="focus-time">${next.event.time}</div>
-        <div class="small">${next.event.note}</div>
-        <div class="button-row">
-          ${next.event.map?`<a class="primary" href="${next.event.map}" target="_blank">Open Maps</a>`:""}
-          <button class="secondary" data-home-route="${day.date}">Start Route Mode</button>
-          <button class="secondary" data-jump="trip">View full day</button>
-        </div>
-      </div>
-      <div class="info-card">
-        <strong>Today’s progress</strong>
-        <div class="progress-track"><div class="progress-fill" style="width:${Math.round(day.events.filter((e,i)=>isDone(eventId(day,e,i))).length/day.events.length*100)}%"></div></div>
-        <div class="small">${day.events.filter((e,i)=>isDone(eventId(day,e,i))).length} of ${day.events.length} completed</div>
-      </div>`:
-      `<div class="callout">Before departure, this screen focuses on preparation. During the trip, it automatically becomes your live daily dashboard.</div>`
-    }
-
-    ${upcoming?`
-      <div class="section-title"><h2>Next reservation</h2></div>
-      <div class="focus-card">
-        <div class="focus-label">BOOKED</div>
-        <div class="focus-title">${upcoming.event.title}</div>
-        <div class="focus-time">${fmtDate(upcoming.day.date)} · ${upcoming.event.time}</div>
-        <div class="small">${upcoming.event.note}</div>
-      </div>`:""
-    }
-
-    <div class="section-title"><h2>Quick access</h2></div>
-    <div class="info-grid">
-      <button class="menu-card" data-jump="wallet"><div><strong>Ticket wallet</strong><span>Flights, trains, tours and ferries</span></div><div>›</div></button>
-      <button class="menu-card" data-open="packing"><div><strong>Packing list</strong><span>Saved directly on this phone</span></div><div>›</div></button>
-      <button class="menu-card" data-open="bookings"><div><strong>Remaining bookings</strong><span>Colosseum, Pisa and Pantheon</span></div><div>›</div></button>
-      <button class="menu-card" data-jump="guide"><div><strong>City guide</strong><span>Food ideas and expense tracking</span></div><div>›</div></button>
+    <div class="section-title today-schedule-title"><h2>Today’s schedule</h2><span class="small">${completed} completed</span></div>
+    <div class="today-timeline">
+      ${day.events.map((event,index)=>{
+        const key=eventId(day,event,index),done=isDone(key),active=index===nextIndex;
+        return `<article class="today-event ${done?"done":""} ${active?"active":""}" data-event="${key}">
+          <button class="today-check" data-today-check="${key}" aria-label="${done?"Mark incomplete":"Mark complete"}">${done?"✓":""}</button>
+          <div class="today-event-line"><span></span></div>
+          <div class="today-event-body">
+            <div class="today-event-meta"><strong>${event.time}</strong>${active?`<span>Up next</span>`:""}</div>
+            <div class="today-event-title">${event.title}</div>
+            <div class="today-event-note">${event.note}</div>
+            <div class="today-event-actions">
+              ${event.map?`<a href="${event.map}" target="_blank" rel="noopener">Maps</a>`:""}
+              ${event.status?`<span class="badge ${badgeClass(event.status)}">${event.status}</span>`:""}
+            </div>
+          </div>
+        </article>`;
+      }).join("")}
     </div>`;
+
   bindInternalNavigation();
+  qs("#todayDaySelect").addEventListener("change",e=>renderHome(e.target.value));
+  qs("#todayPrev").addEventListener("click",()=>{if(dayIndex>0)renderHome(trip[dayIndex-1].date)});
+  qs("#todayNext").addEventListener("click",()=>{if(dayIndex<trip.length-1)renderHome(trip[dayIndex+1].date)});
   qsa("[data-home-route]").forEach(btn=>btn.addEventListener("click",()=>openRouteMode(btn.dataset.homeRoute)));
+  qsa("[data-today-check]").forEach(btn=>btn.addEventListener("click",()=>{
+    const key=btn.dataset.todayCheck;
+    setDone(key,!isDone(key));
+    renderHome(day.date);
+    renderTrip();
+  }));
 }
+
 function renderTrip(){
   const cities=["All","Flights","Venice","Florence","Rome","Naples","Capri"];
   qs("#trip").innerHTML=`
