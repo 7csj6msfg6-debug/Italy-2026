@@ -299,6 +299,30 @@ function walletItemKey(groupName,item){
   return `${groupName}|${item.title}|${item.date}|${item.time}`.toLowerCase().replace(/[^a-z0-9|]+/g,"-");
 }
 
+
+function walletProviderUrl(groupName,item){
+  const title=(item.title||"").toLowerCase();
+  if(title.includes("aa ")||title.includes("american airlines")) return "https://www.aa.com/";
+  if(title.includes("ba ")||title.includes("british airways")) return "https://www.britishairways.com/";
+  if(title.includes("frecciarossa")||title.includes("trenitalia")) return "https://www.trenitalia.com/";
+  if(title.includes("italo")) return "https://www.italotreno.com/";
+  if(title.includes("snav")) return "https://www.snav.it/";
+  return "";
+}
+function walletShareText(groupName,item){
+  return [item.title,`${item.date} · ${item.time}`,item.details||item.note||""].filter(Boolean).join("\n");
+}
+function walletQuickActions(groupName,item){
+  const provider=walletProviderUrl(groupName,item);
+  const payload=encodeURIComponent(walletShareText(groupName,item));
+  return `<div class="wallet-quick-actions" aria-label="Quick actions">
+    ${item.map?`<a class="wallet-quick-action" href="${item.map}" target="_blank" rel="noopener"><span>📍</span><small>${item.mapLabel||"Maps"}</small></a>`:""}
+    ${provider?`<a class="wallet-quick-action" href="${provider}" target="_blank" rel="noopener"><span>↗</span><small>Provider</small></a>`:""}
+    <button class="wallet-quick-action" data-copy-reservation="${payload}"><span>⧉</span><small>Copy</small></button>
+    <button class="wallet-quick-action" data-share-reservation="${payload}" data-share-title="${escapeHTML(item.title)}"><span>⇧</span><small>Share</small></button>
+  </div>`;
+}
+
 async function renderWallet(){
   const allItems=wallet.flatMap(group=>group.items.map(item=>({...item,group:group.group,icon:group.icon})));
   const ready=allItems.filter(item=>item.status==="Ready").length;
@@ -366,7 +390,7 @@ async function renderWallet(){
           </div>
           ${item.details?`<div class="wallet-details">${item.details}</div>`:""}
           ${item.note?`<div class="wallet-note">${item.note}</div>`:""}
-          ${item.map?`<div class="wallet-actions"><a class="secondary wallet-file-button" href="${item.map}" target="_blank" rel="noopener">${item.mapLabel||"Open Maps"}</a></div>`:""}
+          ${walletQuickActions(group.group,item)}
           <div class="wallet-private-attachment">
             <div class="wallet-private-head">
               <div><strong>Private file on this iPhone</strong><small>${(linkedByKey[walletItemKey(group.group,item)]||[]).length?`${(linkedByKey[walletItemKey(group.group,item)]||[]).length} attached`:"No private file attached"}</small></div>
@@ -415,6 +439,27 @@ async function renderWallet(){
   qsa("[data-wallet-filter]").forEach(button=>button.addEventListener("click",()=>{
     qsa("[data-wallet-filter]").forEach(x=>x.classList.remove("active"));
     button.classList.add("active");activeFilter=button.dataset.walletFilter;applyWalletFilters();
+  }));
+
+  qsa("[data-copy-reservation]").forEach(button=>button.addEventListener("click",async()=>{
+    const text=decodeURIComponent(button.dataset.copyReservation);
+    try{
+      await navigator.clipboard.writeText(text);
+      const label=button.querySelector("small"),original=label.textContent;
+      label.textContent="Copied";
+      setTimeout(()=>label.textContent=original,1400);
+    }catch(error){
+      const area=document.createElement("textarea");area.value=text;document.body.appendChild(area);area.select();document.execCommand("copy");area.remove();
+    }
+  }));
+  qsa("[data-share-reservation]").forEach(button=>button.addEventListener("click",async()=>{
+    const text=decodeURIComponent(button.dataset.shareReservation);
+    const title=button.dataset.shareTitle||"Trip reservation";
+    if(navigator.share){
+      try{await navigator.share({title,text});}catch(error){if(error.name!=="AbortError")console.error(error)}
+    }else{
+      try{await navigator.clipboard.writeText(text);alert("Reservation details copied.")}catch(error){alert(text)}
+    }
   }));
 
   const directInput=qs("#directTicketFile");
