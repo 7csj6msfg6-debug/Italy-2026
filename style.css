@@ -514,15 +514,15 @@ textarea{min-height:140px;resize:vertical}
 /* Today date and trip countdown */
 .today-date-strip{
   display:grid;
-  grid-template-columns:minmax(0,1.35fr) minmax(130px,.65fr);
-  gap:10px;
-  margin-bottom:12px;
+  grid-template-columns:1.25fr .9fr;
+  gap:12px;
+  margin-bottom:14px;
 }
 .today-current-date,.today-countdown{
-  border:1px solid var(--line);
+  border:1px solid rgba(20,63,49,.12);
   border-radius:18px;
   background:var(--surface);
-  padding:14px;
+  padding:15px;
 }
 .today-current-date span,.today-countdown span{
   display:block;
@@ -534,31 +534,80 @@ textarea{min-height:140px;resize:vertical}
 }
 .today-current-date strong{
   display:block;
-  margin-top:6px;
-  font-size:17px;
+  margin-top:7px;
+  font-family:Georgia,serif;
+  font-size:19px;
   line-height:1.25;
 }
-.today-countdown{
-  background:var(--accent-soft);
-  border-color:rgba(47,112,88,.2);
-}
-.today-countdown strong{
-  display:block;
-  color:var(--accent);
-  font-size:25px;
-  line-height:1;
-  margin-bottom:5px;
-}
-.today-countdown small{
-  display:block;
-  color:var(--muted);
-  font-size:11px;
-  line-height:1.3;
-  margin-top:5px;
-}
+.today-countdown{background:var(--accent);color:white}
+.today-countdown strong{display:block;font-family:Georgia,serif;font-size:30px;line-height:1}
+.today-countdown span{color:rgba(255,255,255,.78);margin-top:5px}
+.today-countdown small{display:block;margin-top:8px;color:rgba(255,255,255,.88)}
 @media(max-width:430px){
   .today-date-strip{grid-template-columns:1fr}
   .today-countdown{display:grid;grid-template-columns:auto 1fr;column-gap:9px;align-items:end}
   .today-countdown strong{grid-row:1 / span 2;margin:0}
   .today-countdown small{grid-column:2;margin-top:3px}
+}
+
+
+/* Compact weather card for Today */
+.today-weather-host{margin:14px 0}
+.today-weather-card{
+  border:1px solid rgba(20,63,49,.13);
+  border-radius:20px;
+  background:var(--surface);
+  padding:16px;
+}
+.today-weather-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.today-weather-head h2{
+  margin:5px 0 0;
+  font-size:19px;
+  line-height:1.25;
+}
+.today-weather-head p,.today-weather-card p{
+  color:var(--muted);
+  margin:8px 0 0;
+}
+.today-weather-icon{font-size:27px}
+.today-weather-refresh{
+  flex:none;
+  min-width:40px;
+  min-height:40px;
+  border:1px solid rgba(20,63,49,.15);
+  border-radius:12px;
+  background:rgba(232,240,235,.55);
+  color:var(--accent);
+  font-size:20px;
+  font-weight:800;
+}
+.today-weather-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-top:14px;
+}
+.today-weather-grid>div{
+  border-radius:13px;
+  background:rgba(232,240,235,.45);
+  padding:10px;
+}
+.today-weather-grid span,
+.today-weather-grid strong{display:block}
+.today-weather-grid span{font-size:11px;color:var(--muted);font-weight:700}
+.today-weather-grid strong{margin-top:4px;font-size:15px}
+.today-weather-foot{
+  margin-top:11px;
+  color:var(--muted);
+  font-size:12px;
+}
+@media(max-width:370px){
+  .today-weather-grid{grid-template-columns:1fr}
+  .today-weather-grid>div{display:flex;justify-content:space-between;align-items:center}
+  .today-weather-grid strong{margin-top:0}
 }

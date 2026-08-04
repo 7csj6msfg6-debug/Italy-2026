@@ -235,6 +235,7 @@ function getTodayScreenDate(){
 function setTodayScreenDate(date){
   try{localStorage.setItem(P+"today-preview-date",date)}catch{}
 }
+
 function todayDateLabel(date=new Date()){
   return new Intl.DateTimeFormat("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).format(date);
 }
@@ -256,6 +257,154 @@ function tripCountdown(){
   const daysSince=Math.floor((today-end)/dayMs);
   return {value:"Complete",label:"Italy 2026",message:daysSince===1?"Trip ended yesterday":`Trip ended ${daysSince} days ago`};
 }
+
+
+const WEATHER_LOCATIONS={
+  Venice:{name:"Venice",latitude:45.4408,longitude:12.3155},
+  Florence:{name:"Florence",latitude:43.7696,longitude:11.2558},
+  Rome:{name:"Rome",latitude:41.9028,longitude:12.4964},
+  Naples:{name:"Naples",latitude:40.8518,longitude:14.2681},
+  Capri:{name:"Capri",latitude:40.5509,longitude:14.2429},
+  "Fort Lauderdale":{name:"Fort Lauderdale",latitude:26.1224,longitude:-80.1373}
+};
+function weatherLocationForDay(day){
+  if(day.date==="2026-09-14")return WEATHER_LOCATIONS["Fort Lauderdale"];
+  if(day.city==="Flights"&&day.date==="2026-09-27")return WEATHER_LOCATIONS.Naples;
+  return WEATHER_LOCATIONS[day.city]||null;
+}
+function weatherCodeLabel(code){
+  const labels={
+    0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",
+    45:"Foggy",48:"Rime fog",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",
+    56:"Freezing drizzle",57:"Heavy freezing drizzle",61:"Light rain",63:"Rain",
+    65:"Heavy rain",66:"Freezing rain",67:"Heavy freezing rain",71:"Light snow",
+    73:"Snow",75:"Heavy snow",77:"Snow grains",80:"Light showers",
+    81:"Showers",82:"Heavy showers",85:"Snow showers",86:"Heavy snow showers",
+    95:"Thunderstorms",96:"Thunderstorms with hail",99:"Severe thunderstorms with hail"
+  };
+  return labels[code]||"Weather";
+}
+function weatherIcon(code){
+  if(code===0)return "☀️";
+  if([1,2].includes(code))return "🌤️";
+  if(code===3)return "☁️";
+  if([45,48].includes(code))return "🌫️";
+  if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code))return "🌧️";
+  if([71,73,75,77,85,86].includes(code))return "🌨️";
+  if([95,96,99].includes(code))return "⛈️";
+  return "🌤️";
+}
+function weatherDateDistance(date){
+  const target=new Date(`${date}T12:00:00`);
+  const now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);
+  return Math.round((target-today)/86400000);
+}
+function weatherCacheKey(location,date){return `${P}weather-${location.name.toLowerCase().replace(/\s+/g,"-")}-${date}`}
+function savedWeather(location,date){
+  try{return JSON.parse(localStorage.getItem(weatherCacheKey(location,date))||"null")}catch{return null}
+}
+function saveWeather(location,date,data){
+  try{localStorage.setItem(weatherCacheKey(location,date),JSON.stringify(data))}catch{}
+}
+function weatherUpdatedLabel(timestamp){
+  const date=new Date(timestamp);
+  return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(date);
+}
+function weatherCardHTML(state){
+  if(state.mode==="unavailable"){
+    return `<section class="today-weather-card">
+      <div class="today-weather-head"><div><span class="focus-label">${state.location.toUpperCase()} WEATHER</span><h2>Forecast available closer to this date</h2></div><span class="today-weather-icon">🌤️</span></div>
+      <p>Daily forecasts become available within about 16 days of ${state.dateLabel}.</p>
+    </section>`;
+  }
+  if(state.mode==="loading"){
+    return `<section class="today-weather-card"><div class="today-weather-head"><div><span class="focus-label">${state.location.toUpperCase()} WEATHER</span><h2>Loading forecast…</h2></div><span class="today-weather-icon">⋯</span></div></section>`;
+  }
+  if(state.mode==="error"){
+    return `<section class="today-weather-card">
+      <div class="today-weather-head"><div><span class="focus-label">${state.location.toUpperCase()} WEATHER</span><h2>Forecast unavailable</h2></div><span class="today-weather-icon">⚠️</span></div>
+      <p>${state.cached?"Showing no saved forecast for this date.":"Connect to the internet and try again."}</p>
+      <button class="secondary today-weather-refresh" data-weather-refresh>Try again</button>
+    </section>`;
+  }
+  return `<section class="today-weather-card">
+    <div class="today-weather-head">
+      <div><span class="focus-label">${state.location.toUpperCase()} WEATHER</span><h2>${state.icon} ${Math.round(state.temperature)}°F · ${state.condition}</h2></div>
+      <button class="today-weather-refresh" data-weather-refresh aria-label="Refresh weather">↻</button>
+    </div>
+    <div class="today-weather-grid">
+      <div><span>Feels like</span><strong>${Math.round(state.feelsLike)}°</strong></div>
+      <div><span>High / Low</span><strong>${Math.round(state.high)}° / ${Math.round(state.low)}°</strong></div>
+      <div><span>Rain</span><strong>${Math.round(state.rain)}%</strong></div>
+    </div>
+    <div class="today-weather-foot">${state.offline?"Saved forecast":"Updated"} · ${weatherUpdatedLabel(state.updatedAt)}</div>
+  </section>`;
+}
+async function renderTodayWeather(day,force=false){
+  const host=qs("#todayWeather");
+  if(!host)return;
+  const location=weatherLocationForDay(day);
+  if(!location){host.innerHTML="";return}
+  const distance=weatherDateDistance(day.date);
+  const dateLabel=new Intl.DateTimeFormat("en-US",{month:"long",day:"numeric"}).format(new Date(`${day.date}T12:00:00`));
+  if(distance<0||distance>16){
+    host.innerHTML=weatherCardHTML({mode:"unavailable",location:location.name,dateLabel});
+    return;
+  }
+  const cached=savedWeather(location,day.date);
+  if(cached&&!force){
+    host.innerHTML=weatherCardHTML({...cached,mode:"ready",offline:!navigator.onLine});
+    const refresh=host.querySelector("[data-weather-refresh]");
+    if(refresh)refresh.addEventListener("click",()=>renderTodayWeather(day,true));
+    if(!navigator.onLine)return;
+  }else{
+    host.innerHTML=weatherCardHTML({mode:"loading",location:location.name});
+  }
+  try{
+    const params=new URLSearchParams({
+      latitude:location.latitude,
+      longitude:location.longitude,
+      daily:"weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,precipitation_probability_max",
+      current:"temperature_2m,apparent_temperature,weather_code",
+      temperature_unit:"fahrenheit",
+      timezone:"auto",
+      start_date:day.date,
+      end_date:day.date
+    });
+    const response=await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+    if(!response.ok)throw new Error(`Weather request failed: ${response.status}`);
+    const json=await response.json();
+    const isToday=day.date===todayISO();
+    const result={
+      location:location.name,
+      temperature:isToday&&json.current?json.current.temperature_2m:json.daily.temperature_2m_max[0],
+      feelsLike:isToday&&json.current?json.current.apparent_temperature:json.daily.apparent_temperature_max[0],
+      high:json.daily.temperature_2m_max[0],
+      low:json.daily.temperature_2m_min[0],
+      rain:json.daily.precipitation_probability_max[0]??0,
+      condition:weatherCodeLabel(isToday&&json.current?json.current.weather_code:json.daily.weather_code[0]),
+      icon:weatherIcon(isToday&&json.current?json.current.weather_code:json.daily.weather_code[0]),
+      updatedAt:Date.now()
+    };
+    saveWeather(location,day.date,result);
+    if(qs("#todayWeather"))qs("#todayWeather").innerHTML=weatherCardHTML({...result,mode:"ready"});
+    const refresh=qs("#todayWeather [data-weather-refresh]");
+    if(refresh)refresh.addEventListener("click",()=>renderTodayWeather(day,true));
+  }catch(error){
+    console.error(error);
+    if(cached){
+      host.innerHTML=weatherCardHTML({...cached,mode:"ready",offline:true});
+      const refresh=host.querySelector("[data-weather-refresh]");
+      if(refresh)refresh.addEventListener("click",()=>renderTodayWeather(day,true));
+    }else{
+      host.innerHTML=weatherCardHTML({mode:"error",location:location.name});
+      const refresh=host.querySelector("[data-weather-refresh]");
+      if(refresh)refresh.addEventListener("click",()=>renderTodayWeather(day,true));
+    }
+  }
+}
+
 function renderHome(selectedDate){
   const actual=todayISO();
   const date=selectedDate||getTodayScreenDate();
@@ -295,6 +444,8 @@ function renderHome(selectedDate){
         <button class="today-arrow" id="todayNext" ${dayIndex===trip.length-1?"disabled":""} aria-label="Next day">›</button>
       </div>
     </section>
+
+    <div id="todayWeather" class="today-weather-host"></div>
 
     ${next?`<section class="today-next-card">
       <div class="today-next-top"><div class="focus-label">${isActual?"UP NEXT":"FIRST UNFINISHED STOP"}</div><span>${nextIndex+1} of ${day.events.length}</span></div>
@@ -340,6 +491,7 @@ function renderHome(selectedDate){
       }).join("")}
     </div>`;
 
+  renderTodayWeather(day);
   bindInternalNavigation();
   qs("#todayDaySelect").addEventListener("change",e=>renderHome(e.target.value));
   qs("#todayPrev").addEventListener("click",()=>{if(dayIndex>0)renderHome(trip[dayIndex-1].date)});
