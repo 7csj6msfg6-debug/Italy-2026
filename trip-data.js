@@ -35,3 +35,34 @@ window.CITY_GUIDE = {
  Naples:[{type:"Pizza",name:"Add your Naples pizza pick",note:"For arrival day."},{type:"Final dinner",name:"Add your final-night restaurant",note:"For September 26."}],
  Capri:[{type:"Lunch",name:"Add a quick Capri lunch",note:"Must fit before 1:45 PM boat-tour check-in."},{type:"Gelato",name:"Add a Marina Grande option",note:"For after the boat tour."}]
 };
+
+
+window.TICKET_FILES={
+"Flights":[
+{title:"FLL → Philadelphia",status:"Ticket Needed"},
+{title:"Philadelphia → Venice",status:"Ticket Needed"},
+{title:"Naples → London",status:"Ticket Needed"},
+{title:"London → Miami",status:"Ticket Needed"}],
+"Trains":[
+{title:"Venice → Florence",status:"Ticket Needed"},
+{title:"Florence → Rome",status:"Ticket Needed"},
+{title:"Rome → Naples",status:"Ticket Needed"}],
+"Hotels":[
+{title:"Rio Hotel",status:"Reservation Only"},
+{title:"B&B A Florence View",status:"Reservation Only"},
+{title:"Temple View Guest House",status:"Reservation Only"},
+{title:"Napolinn B&B",status:"Reservation Only"}],
+"Attractions":[
+{title:"St. Mark's Basilica",status:"Ticket Needed"},
+{title:"Accademia",status:"Ticket Needed"},
+{title:"Uffizi",status:"Ticket Needed"},
+{title:"Vatican Museums",status:"Ticket Needed"},
+{title:"St. Peter's Basilica",status:"Ticket Needed"},
+{title:"Colosseum",status:"Ticket Needed"}],
+"Ferries":[
+{title:"SNAV Naples ↔ Capri",status:"Ticket Needed"}],
+"Tours":[
+{title:"Tuscany Wine Tour",status:"Ticket Needed"},
+{title:"Capri Boat Tour",status:"Ticket Needed"},
+{title:"Pompeii & Vesuvius Tour",status:"Ticket Needed"}]
+};

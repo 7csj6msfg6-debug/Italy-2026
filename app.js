@@ -4,6 +4,7 @@ const hotels = window.HOTELS || [];
 const remaining = window.REMAINING || [];
 const wallet = window.TICKET_WALLET || [];
 const cityGuide = window.CITY_GUIDE || {};
+const ticketFiles = window.TICKET_FILES || {};
 const P = "italy2026-v4-";
 
 const qs = s => document.querySelector(s);
@@ -247,22 +248,21 @@ function renderTrip(){
   }));
   bindDayCards();
 }
+
 function renderWallet(){
+  const groups=Object.entries(ticketFiles);
   qs("#wallet").innerHTML=`
-    <div class="section-title"><h2>Ticket wallet</h2><span class="small">${wallet.flatMap(g=>g.items).length} items</span></div>
-    <div class="callout">Use Notes to store confirmation numbers for now. QR codes and uploaded ticket files can be linked in a future update.</div>
-    ${wallet.map(group=>`<section class="wallet-group">
-      <h3>${group.icon} ${group.group}</h3>
-      ${group.items.map(item=>`<div class="wallet-item">
-        <div class="wallet-top">
-          <div>
-            <div class="wallet-title">${item.title}</div>
-            <div class="small">${item.date} · ${item.time}</div>
-          </div>
-          <span class="badge ${badgeClass(item.status)}">${item.status}</span>
-        </div>
-      </div>`).join("")}
-    </section>`).join("")}`;
+  <div class="section-title"><h2>Wallet 2.0</h2><span class="small">Offline document organizer</span></div>
+  <div class="callout">As you send me tickets, PDFs and QR codes, they'll be embedded here for offline access.</div>
+  ${groups.map(([name,items])=>`<section class="wallet-group"><h3>${name}</h3>
+  ${items.map(item=>`<div class="wallet-item">
+    <div class="wallet-top"><div><div class="wallet-title">${item.title}</div><div class="small">${item.status}</div></div>
+    <span class="badge ${item.status==="Ticket Needed"?"warn":""}">${item.status}</span></div>
+    <div class="button-row">
+      <button class="secondary" disabled>${item.status==="Ticket Added"?"View Ticket":"No Ticket Yet"}</button>
+    </div>
+  </div>`).join("")}
+  </section>`).join("")}`;
 }
 function renderGuide(){
   const cities=Object.keys(cityGuide);
