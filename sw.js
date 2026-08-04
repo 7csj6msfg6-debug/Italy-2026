@@ -1,4 +1,4 @@
-const CACHE='italy-2026-wallet-docs-v2';
+const CACHE='italy-2026-wallet-direct-attach-v1';
 const FILES=['./','./index.html','./style.css','./app.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./tickets/st-peters-booking-confirmation.pdf','./tickets/st-peters-entry-qr-codes.pdf','./tickets/tuscany-wine-tour-voucher.pdf','./tickets/venice-florence-train-ania.pdf','./tickets/venice-florence-train-alberto.pdf','./tickets/rome-naples-train.pdf','./tickets/accademia-tickets.pdf','./tickets/capri-ferry-roundtrip.pdf','./tickets/pompeii-vesuvius-tour.pdf','./tickets/brunelleschi-dome-ticket.pdf','./tickets/uffizi-tickets.pdf','./tickets/vatican-museums-voucher.pdf','./tickets/florence-rome-train.pdf','./tickets/st-marks-doges-palace-voucher.pdf'];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)))});
 self.addEventListener('activate',event=>event.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))])));

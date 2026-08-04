@@ -295,6 +295,10 @@ function renderTrip(){
   }));
   bindDayCards();
 }
+function walletItemKey(groupName,item){
+  return `${groupName}|${item.title}|${item.date}|${item.time}`.toLowerCase().replace(/[^a-z0-9|]+/g,"-");
+}
+
 async function renderWallet(){
   const allItems=wallet.flatMap(group=>group.items.map(item=>({...item,group:group.group,icon:group.icon})));
   const ready=allItems.filter(item=>item.status==="Ready").length;
@@ -302,6 +306,9 @@ async function renderWallet(){
   const statusClass=status=>status==="Ready"?"ready":status==="To book"?"warn":"needed";
   let imported=[];
   try{imported=await getImportedTickets()}catch(error){console.error("Ticket database unavailable",error)}
+  const unassigned=imported.filter(item=>!item.linkedWalletKey);
+  const linkedByKey={};
+  imported.filter(item=>item.linkedWalletKey).forEach(item=>(linkedByKey[item.linkedWalletKey]||=[]).push(item));
   const categories=["All","Flight","Train","Hotel","Attraction","Ferry","Tour","Other"];
   const icons={Flight:"✈️",Train:"🚆",Hotel:"🏨",Attraction:"🎟️",Ferry:"🚤",Tour:"🍷",Other:"📄"};
   const groupCategory={Flights:"Flight",Trains:"Train",Hotels:"Hotel",Attractions:"Attraction",Ferries:"Ferry",Tours:"Tour"};
@@ -317,7 +324,7 @@ async function renderWallet(){
     </div>
 
     <div class="wallet-actions-top">
-      <button class="wallet-add-button" id="openTicketImporter"><span>＋</span><div><strong>Add from iPhone</strong><small>PDF or image from Files</small></div></button>
+      <button class="wallet-add-button" id="openTicketImporter"><span>＋</span><div><strong>Add unassigned ticket</strong><small>Or upload beneath a specific reservation</small></div></button>
     </div>
 
     <div class="wallet-summary polished">
@@ -326,7 +333,7 @@ async function renderWallet(){
       <div><strong>${pending}</strong><span>Still needed</span></div>
     </div>
 
-    <div class="wallet-privacy-note"><span>🔒</span><div><strong>Private imports stay on this iPhone</strong><small>Embedded documents in the tickets folder remain part of the published site.</small></div></div>
+    <div class="wallet-privacy-note"><span>🔒</span><div><strong>Private attachments stay on this iPhone</strong><small>Files uploaded beneath a reservation remain tied to that card on this device.</small></div></div>
 
     <div class="wallet-tools">
       <label class="wallet-search"><span>⌕</span><input id="walletSearch" type="search" placeholder="Search tickets"></label>
@@ -334,9 +341,9 @@ async function renderWallet(){
     </div>
 
     <div id="walletContent">
-      ${imported.length?`<section class="wallet-group imported-wallet-group" data-wallet-category="Imported">
-        <div class="wallet-group-heading"><div><span class="wallet-group-icon">📱</span><div><h3>Added on this iPhone</h3><small>${imported.length} saved offline</small></div></div></div>
-        ${imported.map(item=>`
+      ${unassigned.length?`<section class="wallet-group imported-wallet-group" data-wallet-category="Imported">
+        <div class="wallet-group-heading"><div><span class="wallet-group-icon">📱</span><div><h3>Unassigned files</h3><small>${unassigned.length} saved offline</small></div></div></div>
+        ${unassigned.map(item=>`
           <article class="wallet-item wallet-document-card imported-ticket-card" data-wallet-item data-category="${escapeHTML(item.category)}" data-search="${escapeHTML((item.name+' '+item.category+' '+(item.notes||'')).toLowerCase())}">
             <div class="wallet-card-main">
               <div class="wallet-card-icon">${icons[item.category]||"📄"}</div>
@@ -365,10 +372,19 @@ async function renderWallet(){
             ${item.map?`<a class="secondary wallet-file-button" href="${item.map}" target="_blank" rel="noopener">${item.mapLabel||"Open Maps"}</a>`:""}
             ${!(item.documents||[]).length?`<button class="secondary wallet-file-button" disabled>Document not added</button>`:""}
           </div>
+          <div class="wallet-private-attachment">
+            <div class="wallet-private-head">
+              <div><strong>Private file on this iPhone</strong><small>${(linkedByKey[walletItemKey(group.group,item)]||[]).length?`${(linkedByKey[walletItemKey(group.group,item)]||[]).length} attached`:"No private file attached"}</small></div>
+              <button class="wallet-attach-button" data-attach-wallet="${walletItemKey(group.group,item)}" data-attach-title="${escapeHTML(item.title)}" data-attach-category="${groupCategory[group.group]||group.group}">${(linkedByKey[walletItemKey(group.group,item)]||[]).length?"Add another":"Upload file"}</button>
+            </div>
+            ${(linkedByKey[walletItemKey(group.group,item)]||[]).map(file=>`<div class="wallet-local-file"><div class="wallet-local-file-copy"><strong>${escapeHTML(file.fileName)}</strong><small>${formatFileSize(file.size)} · Saved offline</small></div><div class="wallet-local-file-actions"><button class="secondary" data-open-imported="${file.id}">Open</button><button class="secondary danger-text" data-delete-imported="${file.id}">Delete</button></div></div>`).join("")}
+          </div>
         </article>`).join("")}
       </section>`).join("")}
       <div class="wallet-empty hidden" id="walletEmpty">No tickets match this search.</div>
     </div>
+
+    <input id="directTicketFile" class="hidden" type="file" accept="application/pdf,image/*">
 
     <div class="ticket-import-overlay hidden" id="ticketImportOverlay">
       <div class="ticket-import-sheet" role="dialog" aria-modal="true" aria-labelledby="ticketImportTitle">
@@ -405,6 +421,23 @@ async function renderWallet(){
     qsa("[data-wallet-filter]").forEach(x=>x.classList.remove("active"));
     button.classList.add("active");activeFilter=button.dataset.walletFilter;applyWalletFilters();
   }));
+
+  const directInput=qs("#directTicketFile");
+  let pendingAttachment=null;
+  qsa("[data-attach-wallet]").forEach(button=>button.addEventListener("click",()=>{
+    pendingAttachment={key:button.dataset.attachWallet,title:button.dataset.attachTitle,category:button.dataset.attachCategory};
+    directInput.value="";
+    directInput.click();
+  }));
+  directInput.addEventListener("change",async event=>{
+    const file=event.target.files[0];
+    if(!file||!pendingAttachment)return;
+    if(file.size>40*1024*1024){alert("This file is larger than 40 MB. Choose a smaller copy.");return}
+    try{
+      await saveImportedTicket({name:pendingAttachment.title,category:pendingAttachment.category,date:"",time:"",notes:"",linkedWalletKey:pendingAttachment.key,fileName:file.name,type:file.type||"application/octet-stream",size:file.size,blob:file,createdAt:Date.now()});
+      await renderWallet();
+    }catch(error){console.error(error);alert("The file could not be saved. Check available storage and try again.")}
+  });
 
   const overlay=qs("#ticketImportOverlay");
   qs("#openTicketImporter").addEventListener("click",()=>overlay.classList.remove("hidden"));
