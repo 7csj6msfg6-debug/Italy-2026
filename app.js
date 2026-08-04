@@ -575,6 +575,39 @@ function normalizeWebUrl(value){
   if(!v)return '';
   return /^https?:\/\//i.test(v)?v:`https://${v}`;
 }
+
+function parseGoogleMapsShare(value){
+  const raw=(value||'').trim();
+  if(!raw)return null;
+  let candidate=raw;
+  const urlMatch=raw.match(/https?:\/\/[^\s]+/i);
+  if(urlMatch)candidate=urlMatch[0].replace(/[),.;]+$/,'');
+  let url;
+  try{url=new URL(candidate)}catch(error){return {maps:candidate,name:'',city:'',needsDetails:true}}
+  const host=url.hostname.toLowerCase();
+  const isGoogle=host.includes('google.')||host==='maps.app.goo.gl'||host==='goo.gl';
+  if(!isGoogle)return {maps:candidate,name:'',city:'',needsDetails:true};
+
+  let name='';
+  const params=['query','q','destination','daddr'];
+  for(const key of params){
+    const found=url.searchParams.get(key);
+    if(found&&!/^[-+]?\d+(?:\.\d+)?\s*,\s*[-+]?\d+(?:\.\d+)?$/.test(found)){name=found;break}
+  }
+  if(!name){
+    const match=decodeURIComponent(url.pathname).match(/\/place\/([^/]+)/i);
+    if(match)name=match[1];
+  }
+  name=(name||'').replace(/\+/g,' ').replace(/%20/gi,' ').replace(/\s+/g,' ').trim();
+  if(name.includes(','))name=name.split(',')[0].trim();
+
+  const haystack=decodeURIComponent(`${url.pathname} ${url.search}`).toLowerCase();
+  const cityMap=[['Venice',['venice','venezia']],['Florence',['florence','firenze']],['Rome',['rome','roma']],['Naples',['naples','napoli']],['Capri',['capri']]];
+  const city=(cityMap.find(([,aliases])=>aliases.some(alias=>haystack.includes(alias)))||[])[0]||'';
+  const shortLink=host==='maps.app.goo.gl'||host==='goo.gl';
+  return {maps:candidate,name,city,needsDetails:shortLink||!name};
+}
+
 function renderGuide(){
   const cities=['Venice','Florence','Rome','Naples','Capri'];
   const categories=['Breakfast','Coffee','Lunch','Dinner','Gelato','Pizza','Bar','Shopping','Sightseeing','Other'];
@@ -626,6 +659,11 @@ function renderGuide(){
       <div class="place-editor-sheet" role="dialog" aria-modal="true" aria-labelledby="placeEditorTitle">
         <div class="ticket-import-head"><div><div class="focus-label">PERSONAL CITY GUIDE</div><h2 id="placeEditorTitle">Add place</h2></div><button class="ticket-close" id="closePlaceEditor" aria-label="Close">×</button></div>
         <div class="place-editor-grid">
+          <div class="maps-paste-box full">
+            <label class="ticket-field"><span>Paste Google Maps link</span><input id="placeMapsPaste" inputmode="url" placeholder="Paste a shared Google Maps link"></label>
+            <button class="secondary" id="fillPlaceFromMaps" type="button">Fill place</button>
+            <small>The Maps link is saved automatically. Full Google Maps links can also fill the name and city; shortened links may still need those details entered manually.</small>
+          </div>
           <label class="ticket-field full"><span>Place name</span><input id="placeName" placeholder="Restaurant, café or attraction"></label>
           <label class="ticket-field"><span>City</span><select id="placeCity">${cities.map(x=>`<option>${x}</option>`).join('')}</select></label>
           <label class="ticket-field"><span>Category</span><select id="placeCategory">${categories.map(x=>`<option>${x}</option>`).join('')}</select></label>
@@ -696,11 +734,25 @@ function renderGuide(){
     editingPlaceId=id||null;
     const item=id?guideLoad('guide-places',[]).find(x=>x.id===id):null;
     qs('#placeEditorTitle').textContent=item?'Edit place':'Add place';
+    qs('#placeMapsPaste').value='';
     qs('#placeName').value=item?.name||'';qs('#placeCity').value=item?.city||(activeCity==='All'?'Venice':activeCity);
     qs('#placeCategory').value=item?.category||'Dinner';qs('#placeNotes').value=item?.notes||'';qs('#placeMaps').value=item?.maps||'';
     qs('#placePhone').value=item?.phone||'';qs('#placeWebsite').value=item?.website||'';qs('#placeDay').value=item?.plannedDay||'';qs('#placeFavorite').checked=!!item?.favorite;
     qs('#placeEditorMessage').textContent='';overlay.classList.remove('hidden');setTimeout(()=>qs('#placeName').focus(),50);
   };
+  qs('#fillPlaceFromMaps').addEventListener('click',()=>{
+    const parsed=parseGoogleMapsShare(qs('#placeMapsPaste').value);
+    const message=qs('#placeEditorMessage');
+    if(!parsed){message.textContent='Paste a Google Maps link first.';return}
+    qs('#placeMaps').value=parsed.maps;
+    if(parsed.name&&!qs('#placeName').value.trim())qs('#placeName').value=parsed.name;
+    if(parsed.city)qs('#placeCity').value=parsed.city;
+    message.textContent=parsed.needsDetails
+      ? 'Maps link added. Shortened links do not expose all place details, so confirm the name and city.'
+      : 'Maps link added and available details filled in. Review before saving.';
+  });
+  qs('#placeMapsPaste').addEventListener('paste',()=>setTimeout(()=>qs('#fillPlaceFromMaps').click(),0));
+
   qs('#openPlaceEditor').addEventListener('click',()=>openPlaceEditor());
   qs('#closePlaceEditor').addEventListener('click',()=>overlay.classList.add('hidden'));
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.add('hidden')});

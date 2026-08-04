@@ -502,3 +502,10 @@ textarea{min-height:140px;resize:vertical}
 .expense-save{width:100%;margin-top:12px}.expense-filter-row{display:grid;grid-template-columns:1fr auto;gap:9px;margin:12px 0}.expense-breakdown{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:13px;margin-bottom:12px}.expense-breakdown h3{margin:0 0 8px;font-size:15px}.expense-breakdown>div{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--border)}
 .expense-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:13px;margin-bottom:9px}.expense-item>div:first-child span,.expense-item>div:first-child small{display:block;color:var(--muted);font-size:12px;margin-top:3px}.expense-item-amount{text-align:right}.expense-item-amount strong,.expense-item-amount span{display:block}.expense-item-amount span{font-size:12px;color:var(--muted)}.expense-item-amount button{border:0;background:transparent;padding:5px 0 0;font-size:12px}
 @media(max-width:540px){.guide-toolbar{grid-template-columns:1fr}.guide-add-place{width:100%}.guide-place-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.place-editor-grid,.expense-form.upgraded{grid-template-columns:1fr}.place-editor-grid .full{grid-column:auto}.expense-summary-grid{grid-template-columns:1fr 1fr}.expense-summary-grid .expense-stat:first-child{grid-column:1/-1}.expense-item{grid-template-columns:1fr auto}}
+
+
+/* Google Maps paste helper */
+.maps-paste-box{padding:12px;border:1px solid rgba(20,63,49,.16);border-radius:16px;background:rgba(232,240,235,.38)}
+.maps-paste-box .ticket-field{margin:0}
+.maps-paste-box button{width:100%;margin-top:9px;min-height:44px}
+.maps-paste-box small{display:block;margin-top:8px;color:var(--muted);font-size:12px;line-height:1.4}
