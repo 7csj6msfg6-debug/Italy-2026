@@ -4,29 +4,40 @@ window.REMAINING=[["Colosseum / Roman Forum / Palatine Hill", "Ticket type and e
 
 window.TICKET_WALLET = [
  {group:"Flights", icon:"✈️", items:[
-  {title:"AA 1602 — FLL to Philadelphia",date:"Sep 14",time:"3:25 PM",status:"Booked"},
-  {title:"AA 714 — Philadelphia to Venice",date:"Sep 14",time:"7:45 PM",status:"Booked"},
-  {title:"BA 6647 — Naples to London",date:"Sep 27",time:"7:40 AM",status:"Booked"},
-  {title:"AA 39 — London to Miami",date:"Sep 27",time:"12:15 PM",status:"Booked"}]},
+  {title:"AA 1602 — FLL to Philadelphia",date:"Sep 14",time:"3:25 PM",status:"Ticket needed",note:"Boarding pass becomes available closer to departure."},
+  {title:"AA 714 — Philadelphia to Venice",date:"Sep 14",time:"7:45 PM",status:"Ticket needed",note:"Boarding pass becomes available closer to departure."},
+  {title:"BA 6647 — Naples to London",date:"Sep 27",time:"7:40 AM",status:"Ticket needed",note:"Boarding pass becomes available closer to departure."},
+  {title:"AA 39 — London to Miami",date:"Sep 27",time:"12:15 PM",status:"Ticket needed",note:"Boarding pass becomes available closer to departure."}]},
  {group:"Trains", icon:"🚆", items:[
-  {title:"Frecciarossa 9411 — Venice to Florence",date:"Sep 17",time:"9:26 AM",status:"Booked"},
-  {title:"Italo 8953 — Florence to Rome",date:"Sep 20",time:"10:03 AM",status:"Booked"},
-  {title:"Italo 9967 — Rome to Naples",date:"Sep 24",time:"9:41 AM",status:"Booked"},
-  {title:"Florence ↔ Pisa",date:"Sep 19",time:"Early morning",status:"To book"}]},
- {group:"Attractions & Tours", icon:"🎟️", items:[
-  {title:"St. Mark’s Basilica & Doge’s Palace",date:"Sep 16",time:"10:00 AM",status:"Booked"},
-  {title:"Accademia",date:"Sep 18",time:"8:30 AM",status:"Booked"},
-  {title:"Brunelleschi’s Dome",date:"Sep 18",time:"10:00 AM",status:"Booked"},
-  {title:"Uffizi Gallery",date:"Sep 18",time:"2:45 PM",status:"Booked"},
-  {title:"Tuscany Wine Tour",date:"Sep 19",time:"2:30 PM",status:"Booked"},
-  {title:"Colosseum / Forum / Palatine",date:"Sep 21",time:"TBD",status:"To book"},
-  {title:"Vatican Museums",date:"Sep 22",time:"9:00 AM",status:"Booked"},
-  {title:"St. Peter’s Basilica + Dome",date:"Sep 22",time:"1:30 PM",status:"Booked"},
-  {title:"Capri Boat Tour",date:"Sep 25",time:"2:00 PM",status:"Booked"},
-  {title:"Pompeii & Mount Vesuvius",date:"Sep 26",time:"Morning",status:"Booked"}]},
+  {title:"Frecciarossa 9411 — Venice to Florence",date:"Sep 17",time:"9:26 AM",status:"Ready",details:"PNR TB2MB5 · Coach 7 · Seats 3D & 4D",documents:[
+    {label:"Alberto's ticket",file:"tickets/venice-florence-train-alberto.pdf"},
+    {label:"Ania's ticket",file:"tickets/venice-florence-train-ania.pdf"}]},
+  {title:"Italo 8953 — Florence to Rome",date:"Sep 20",time:"10:03 AM",status:"Ticket needed",note:"Booked, but no PDF has been added yet."},
+  {title:"Italo 9967 — Rome to Naples",date:"Sep 24",time:"9:41 AM",status:"Ready",details:"Ticket code BL65HR · Coach 7 · Seats 1 & 2",documents:[
+    {label:"Open train ticket",file:"tickets/rome-naples-train.pdf"}]},
+  {title:"Florence ↔ Pisa",date:"Sep 19",time:"Early morning",status:"To book",note:"Train has not been booked yet."}]},
+ {group:"Attractions", icon:"🎟️", items:[
+  {title:"St. Mark’s Basilica & Doge’s Palace",date:"Sep 16",time:"10:00 AM",status:"Ticket needed",note:"Booked, but no document has been added yet."},
+  {title:"Galleria dell’Accademia",date:"Sep 18",time:"8:30 AM",status:"Ready",details:"2 adult tickets · Order 23446732",map:"https://www.google.com/maps/search/?api=1&query=Galleria+dell%27Accademia+Florence",documents:[
+    {label:"Open both tickets",file:"tickets/accademia-tickets.pdf"}]},
+  {title:"Brunelleschi’s Dome",date:"Sep 18",time:"10:30 AM",status:"Ready",details:"Brunelleschi Pass · 463 steps · Porta della Mandorla",map:"https://www.google.com/maps/search/?api=1&query=Brunelleschi%27s+Dome+Florence",documents:[
+    {label:"Open Dome ticket",file:"tickets/brunelleschi-dome-ticket.pdf"}]},
+  {title:"Uffizi Gallery",date:"Sep 18",time:"2:45 PM",status:"Ready",details:"2 adult tickets · PNR 1FS9K1TF",map:"https://www.google.com/maps/search/?api=1&query=Uffizi+Gallery+Florence",documents:[
+    {label:"Open both tickets",file:"tickets/uffizi-tickets.pdf"}]},
+  {title:"Colosseum / Forum / Palatine",date:"Sep 21",time:"TBD",status:"To book",note:"Reservation has not been booked yet."},
+  {title:"Vatican Museums",date:"Sep 22",time:"9:00 AM",status:"Ticket needed",note:"Booked, but no ticket document has been added yet."},
+  {title:"St. Peter’s Basilica + Dome Lift",date:"Sep 22",time:"1:30 PM",status:"Ready",details:"Dome 1:30 PM · Basilica 2:30 PM · VIOLET Lambertini entrance · 2 adults",map:"https://www.google.com/maps/search/?api=1&query=St+Peter%27s+Basilica",documents:[
+    {label:"Entry QR codes & map",file:"tickets/st-peters-entry-qr-codes.pdf",primary:true},
+    {label:"Booking confirmation",file:"tickets/st-peters-booking-confirmation.pdf"}]}]},
  {group:"Ferries", icon:"🚤", items:[
-  {title:"Naples to Capri",date:"Sep 25",time:"8:05 AM",status:"Booked"},
-  {title:"Capri to Naples",date:"Sep 25",time:"6:10 PM",status:"Booked"}]}
+  {title:"SNAV Naples ⇄ Capri Round Trip",date:"Sep 25",time:"8:05 AM outbound · 6:10 PM return",status:"Ready",details:"Outbound check-in 7:35 AM · Return check-in 5:40 PM · Booking PWIP2608020174",documents:[
+    {label:"Open round-trip ferry ticket",file:"tickets/capri-ferry-roundtrip.pdf"}]}]},
+ {group:"Tours", icon:"🍷", items:[
+  {title:"Tuscany Wine Tasting Experience",date:"Sep 19",time:"2:30 PM",status:"Ready",details:"Check-in 2:15 PM · Prestige Rent · Booking 1379678993",map:"https://www.google.com/maps/search/?api=1&query=Piazzale+Montelungo+Florence",documents:[
+    {label:"Open wine-tour voucher",file:"tickets/tuscany-wine-tour-voucher.pdf"}]},
+  {title:"Capri Small-Group Boat Tour",date:"Sep 25",time:"2:00 PM",status:"Ticket needed",note:"Booked, but no voucher has been added yet."},
+  {title:"Pompeii & Mount Vesuvius",date:"Sep 26",time:"8:00 AM",status:"Ready",details:"2 adult vouchers · Worldtours · Reference WOR-T140093602",documents:[
+    {label:"Open both tour vouchers",file:"tickets/pompeii-vesuvius-tour.pdf"}]}]}
 ];
 window.CITY_GUIDE = {
  Venice:[{type:"Coffee",name:"Add a favorite café",note:"Use this section for a breakfast stop near Rio Hotel."},{type:"Dinner",name:"Add a dinner choice",note:"Ideal near St. Mark’s or Rialto."}],
@@ -34,35 +45,4 @@ window.CITY_GUIDE = {
  Rome:[{type:"Lunch",name:"Add a Monti lunch",note:"For the Colosseum day."},{type:"Dinner",name:"Add a Trastevere dinner",note:"For September 22."}],
  Naples:[{type:"Pizza",name:"Add your Naples pizza pick",note:"For arrival day."},{type:"Final dinner",name:"Add your final-night restaurant",note:"For September 26."}],
  Capri:[{type:"Lunch",name:"Add a quick Capri lunch",note:"Must fit before 1:45 PM boat-tour check-in."},{type:"Gelato",name:"Add a Marina Grande option",note:"For after the boat tour."}]
-};
-
-
-window.TICKET_FILES={
-"Flights":[
-{title:"FLL → Philadelphia",status:"Ticket Needed"},
-{title:"Philadelphia → Venice",status:"Ticket Needed"},
-{title:"Naples → London",status:"Ticket Needed"},
-{title:"London → Miami",status:"Ticket Needed"}],
-"Trains":[
-{title:"Venice → Florence",status:"Ticket Needed"},
-{title:"Florence → Rome",status:"Ticket Needed"},
-{title:"Rome → Naples",status:"Ticket Needed"}],
-"Hotels":[
-{title:"Rio Hotel",status:"Reservation Only"},
-{title:"B&B A Florence View",status:"Reservation Only"},
-{title:"Temple View Guest House",status:"Reservation Only"},
-{title:"Napolinn B&B",status:"Reservation Only"}],
-"Attractions":[
-{title:"St. Mark's Basilica",status:"Ticket Needed"},
-{title:"Accademia",status:"Ticket Needed"},
-{title:"Uffizi",status:"Ticket Needed"},
-{title:"Vatican Museums",status:"Ticket Needed"},
-{title:"St. Peter's Basilica",status:"Ticket Needed"},
-{title:"Colosseum",status:"Ticket Needed"}],
-"Ferries":[
-{title:"SNAV Naples ↔ Capri",status:"Ticket Needed"}],
-"Tours":[
-{title:"Tuscany Wine Tour",status:"Ticket Needed"},
-{title:"Capri Boat Tour",status:"Ticket Needed"},
-{title:"Pompeii & Vesuvius Tour",status:"Ticket Needed"}]
 };

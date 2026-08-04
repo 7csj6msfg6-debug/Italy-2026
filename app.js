@@ -4,7 +4,6 @@ const hotels = window.HOTELS || [];
 const remaining = window.REMAINING || [];
 const wallet = window.TICKET_WALLET || [];
 const cityGuide = window.CITY_GUIDE || {};
-const ticketFiles = window.TICKET_FILES || {};
 const P = "italy2026-v4-";
 
 const qs = s => document.querySelector(s);
@@ -248,21 +247,37 @@ function renderTrip(){
   }));
   bindDayCards();
 }
-
 function renderWallet(){
-  const groups=Object.entries(ticketFiles);
+  const allItems=wallet.flatMap(group=>group.items);
+  const ready=allItems.filter(item=>item.status==="Ready").length;
+  const statusClass=status=>status==="Ready"?"ready":status==="To book"?"warn":"needed";
   qs("#wallet").innerHTML=`
-  <div class="section-title"><h2>Wallet 2.0</h2><span class="small">Offline document organizer</span></div>
-  <div class="callout">As you send me tickets, PDFs and QR codes, they'll be embedded here for offline access.</div>
-  ${groups.map(([name,items])=>`<section class="wallet-group"><h3>${name}</h3>
-  ${items.map(item=>`<div class="wallet-item">
-    <div class="wallet-top"><div><div class="wallet-title">${item.title}</div><div class="small">${item.status}</div></div>
-    <span class="badge ${item.status==="Ticket Needed"?"warn":""}">${item.status}</span></div>
-    <div class="button-row">
-      <button class="secondary" disabled>${item.status==="Ticket Added"?"View Ticket":"No Ticket Yet"}</button>
+    <div class="section-title"><h2>Ticket wallet</h2><span class="small">${ready} ready · ${allItems.length} total</span></div>
+    <div class="wallet-summary">
+      <div><strong>${ready}</strong><span>Documents ready</span></div>
+      <div><strong>${allItems.filter(x=>x.status==="Ticket needed").length}</strong><span>Files still needed</span></div>
+      <div><strong>${allItems.filter(x=>x.status==="To book").length}</strong><span>Still to book</span></div>
     </div>
-  </div>`).join("")}
-  </section>`).join("")}`;
+    <div class="callout">Your added PDFs are stored inside the app for offline access. Open every important ticket once after updating so Safari can cache it on your phone.</div>
+    ${wallet.map(group=>`<section class="wallet-group">
+      <h3>${group.icon} ${group.group}</h3>
+      ${group.items.map(item=>`<article class="wallet-item wallet-document-card">
+        <div class="wallet-top">
+          <div>
+            <div class="wallet-title">${item.title}</div>
+            <div class="small">${item.date} · ${item.time}</div>
+          </div>
+          <span class="wallet-status ${statusClass(item.status)}">${item.status}</span>
+        </div>
+        ${item.details?`<div class="wallet-details">${item.details}</div>`:""}
+        ${item.note?`<div class="wallet-note">${item.note}</div>`:""}
+        <div class="wallet-actions">
+          ${(item.documents||[]).map(doc=>`<a class="${doc.primary?"primary":"secondary"} wallet-file-button" href="${doc.file}" target="_blank" rel="noopener">📄 ${doc.label}</a>`).join("")}
+          ${item.map?`<a class="secondary wallet-file-button" href="${item.map}" target="_blank" rel="noopener">📍 Open Maps</a>`:""}
+          ${!(item.documents||[]).length?`<button class="secondary wallet-file-button" disabled>No document added yet</button>`:""}
+        </div>
+      </article>`).join("")}
+    </section>`).join("")}`;
 }
 function renderGuide(){
   const cities=Object.keys(cityGuide);
