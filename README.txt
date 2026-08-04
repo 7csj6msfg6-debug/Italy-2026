@@ -1,1 +1,6 @@
-Upload all files to the root of your existing GitHub repository. Future itinerary-only updates usually require replacing trip-data.js. After updates, refresh the GitHub Pages link in Safari and fully close/reopen the Home Screen app.
+ITALY TRIP 2026 — VERSION 5
+
+Upload all files to the root of the same GitHub repository and replace existing files.
+
+New: travel dashboard, ticket wallet, city guide placeholders, expense tracker, and reorganized navigation.
+Future itinerary-only updates still use trip-data.js.
