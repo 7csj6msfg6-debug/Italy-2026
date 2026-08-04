@@ -553,12 +553,122 @@ function renderNotes(){
   });
   bindInternalNavigation();
 }
+function renderCurrency(){
+  const RATE_KEY=P+"currency-rate";
+  const DATE_KEY=P+"currency-rate-date";
+  const FEE_KEY=P+"currency-fee";
+  const DIR_KEY=P+"currency-direction";
+  const savedRate=Number(localStorage.getItem(RATE_KEY))||1.15;
+  const savedDate=localStorage.getItem(DATE_KEY)||"Saved fallback rate";
+  const savedFee=Number(localStorage.getItem(FEE_KEY))||0;
+  const savedDirection=localStorage.getItem(DIR_KEY)||"EURUSD";
+
+  qs("#currency").innerHTML=`
+    <div class="section-title"><h2>Currency converter</h2><button data-back="more">Done</button></div>
+    <div class="currency-hero">
+      <div class="focus-label">EURO ↔ US DOLLAR</div>
+      <div class="currency-rate-line"><strong id="currencyRateText">1 EUR = $${savedRate.toFixed(4)}</strong><span id="currencyRateStatus">${escapeHTML(savedDate)}</span></div>
+    </div>
+
+    <section class="currency-card">
+      <div class="currency-direction-row">
+        <div><span id="fromFlag">🇪🇺</span><strong id="fromCode">EUR</strong></div>
+        <button id="swapCurrency" class="currency-swap" aria-label="Swap currencies">⇄</button>
+        <div><span id="toFlag">🇺🇸</span><strong id="toCode">USD</strong></div>
+      </div>
+
+      <label class="currency-input-wrap">
+        <span id="fromSymbol">€</span>
+        <input id="currencyAmount" inputmode="decimal" type="number" min="0" step="0.01" value="100" aria-label="Amount to convert">
+      </label>
+
+      <div class="currency-result">
+        <small>Estimated amount</small>
+        <strong id="currencyResult">$${(100*savedRate).toFixed(2)}</strong>
+        <span id="currencyFeeNote"></span>
+      </div>
+
+      <div class="currency-quick-row">
+        ${[10,20,50,100,200].map(n=>`<button data-currency-quick="${n}">${n}</button>`).join("")}
+      </div>
+
+      <label class="currency-fee-row">
+        <div><strong>Card foreign-transaction fee</strong><small>Add your card's fee to the estimate</small></div>
+        <select id="currencyFee">
+          ${[0,1,2,3].map(n=>`<option value="${n}" ${n===savedFee?"selected":""}>${n}%</option>`).join("")}
+        </select>
+      </label>
+
+      <button class="primary currency-refresh" id="refreshCurrency">Refresh live rate</button>
+      <div class="currency-message" id="currencyMessage" aria-live="polite"></div>
+    </section>
+
+    <div class="info-card currency-info">
+      <strong>Travel estimate</strong>
+      <div class="small">The converter uses a reference exchange rate. Your bank or card network may use a slightly different rate. It keeps the last successful rate so it can still work offline.</div>
+    </div>`;
+
+  let rate=savedRate;
+  let direction=savedDirection;
+  const amountInput=qs("#currencyAmount");
+  const feeSelect=qs("#currencyFee");
+  const update=()=>{
+    const amount=Math.max(0,Number(amountInput.value)||0);
+    const fee=Number(feeSelect.value)||0;
+    const isEUR=direction==="EURUSD";
+    let result=isEUR?amount*rate:amount/rate;
+    if(fee>0)result*=1+fee/100;
+    qs("#currencyResult").textContent=`${isEUR?"$":"€"}${result.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+    qs("#currencyFeeNote").textContent=fee?`Includes ${fee}% card fee`:"No card fee added";
+    qs("#fromCode").textContent=isEUR?"EUR":"USD";
+    qs("#toCode").textContent=isEUR?"USD":"EUR";
+    qs("#fromFlag").textContent=isEUR?"🇪🇺":"🇺🇸";
+    qs("#toFlag").textContent=isEUR?"🇺🇸":"🇪🇺";
+    qs("#fromSymbol").textContent=isEUR?"€":"$";
+    localStorage.setItem(FEE_KEY,String(fee));
+    localStorage.setItem(DIR_KEY,direction);
+  };
+  const refresh=async(silent=false)=>{
+    const button=qs("#refreshCurrency"),message=qs("#currencyMessage");
+    if(!silent){button.disabled=true;button.textContent="Refreshing…";message.textContent=""}
+    try{
+      const response=await fetch("https://api.frankfurter.dev/v2/rate/EUR/USD",{cache:"no-store"});
+      if(!response.ok)throw new Error("Rate unavailable");
+      const data=await response.json();
+      const liveRate=Number(data.rate);
+      if(!Number.isFinite(liveRate)||liveRate<=0)throw new Error("Invalid rate");
+      rate=liveRate;
+      const date=data.date||new Date().toISOString().slice(0,10);
+      localStorage.setItem(RATE_KEY,String(rate));
+      localStorage.setItem(DATE_KEY,`Updated ${date}`);
+      qs("#currencyRateText").textContent=`1 EUR = $${rate.toFixed(4)}`;
+      qs("#currencyRateStatus").textContent=`Updated ${date}`;
+      if(!silent)message.textContent="Live rate updated.";
+      update();
+    }catch(error){
+      if(!silent)message.textContent="Could not refresh. Using the last saved rate.";
+    }finally{
+      if(!silent){button.disabled=false;button.textContent="Refresh live rate"}
+    }
+  };
+
+  amountInput.addEventListener("input",update);
+  feeSelect.addEventListener("change",update);
+  qs("#swapCurrency").addEventListener("click",()=>{direction=direction==="EURUSD"?"USDEUR":"EURUSD";update()});
+  qsa("[data-currency-quick]").forEach(button=>button.addEventListener("click",()=>{amountInput.value=button.dataset.currencyQuick;update()}));
+  qs("#refreshCurrency").addEventListener("click",()=>refresh(false));
+  bindInternalNavigation();
+  update();
+  refresh(true);
+}
+
 function renderMore(){
   qs("#more").innerHTML=`
     <div class="section-title"><h2>More</h2><span class="small">Trip tools</span></div>
     <button class="menu-card" data-open="bookings"><div><strong>Bookings overview</strong><span>Hotels and remaining reservations</span></div><div>›</div></button>
     <button class="menu-card" data-open="packing"><div><strong>Packing checklist</strong><span>Track what is ready</span></div><div>›</div></button>
     <button class="menu-card" data-open="notes"><div><strong>Trip notes</strong><span>Confirmation numbers and reminders</span></div><div>›</div></button>
+    <button class="menu-card" data-open="currency"><div><strong>Currency converter</strong><span>Convert euros and dollars</span></div><div>›</div></button>
     <div class="info-card" style="margin-top:16px">
       <strong>Offline-ready</strong>
       <div class="small">Once refreshed after an update, the app keeps working without a connection.</div>
@@ -590,6 +700,7 @@ renderMore();
 renderBookings();
 renderPacking();
 renderNotes();
+renderCurrency();
 
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("./sw.js").catch(()=>{});
