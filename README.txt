@@ -1,0 +1,1 @@
+Upload all files to the root of your existing GitHub repository. Future itinerary-only updates usually require replacing trip-data.js. After updates, refresh the GitHub Pages link in Safari and fully close/reopen the Home Screen app.

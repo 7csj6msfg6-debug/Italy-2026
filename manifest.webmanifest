@@ -3,7 +3,7 @@
   "short_name": "Italy 2026",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f6f3ea",
+  "background_color": "#f5f1e8",
   "theme_color": "#184f3b",
   "icons": [
     {
