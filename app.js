@@ -751,6 +751,65 @@ function renderCurrency(){
   refresh(true);
 }
 
+
+const TRANSPORT_LEGS=[
+  {date:"Sep 14",sort:"2026-09-14T15:25",type:"Flight",icon:"✈️",title:"AA 1602 — FLL to Philadelphia",from:"Fort Lauderdale (FLL)",depart:"3:25 PM",to:"Philadelphia (PHL)",arrive:"6:18 PM",group:"Flights",walletTitle:"AA 1602 — FLL to Philadelphia",walletTime:"3:25 PM",provider:"https://www.aa.com/",map:"https://www.google.com/maps/search/?api=1&query=Fort+Lauderdale-Hollywood+International+Airport"},
+  {date:"Sep 14",sort:"2026-09-14T19:45",type:"Flight",icon:"✈️",title:"AA 714 — Philadelphia to Venice",from:"Philadelphia (PHL)",depart:"7:45 PM",to:"Venice Marco Polo (VCE)",arrive:"9:55 AM next day",group:"Flights",walletTitle:"AA 714 — Philadelphia to Venice",walletTime:"7:45 PM",provider:"https://www.aa.com/",map:"https://www.google.com/maps/search/?api=1&query=Philadelphia+International+Airport"},
+  {date:"Sep 17",sort:"2026-09-17T09:26",type:"Train",icon:"🚆",title:"Frecciarossa 9411 — Venice to Florence",from:"Venezia S. Lucia",depart:"9:26 AM",to:"Firenze S. M. Novella",arrive:"11:39 AM",details:"PNR TB2MB5 · Coach 7 · Seats 3D & 4D",group:"Trains",walletTitle:"Frecciarossa 9411 — Venice to Florence",walletTime:"9:26 AM",provider:"https://www.trenitalia.com/",map:"https://www.google.com/maps/search/?api=1&query=Venezia+Santa+Lucia+Station"},
+  {date:"Sep 19",sort:"2026-09-19T07:00",type:"Train",icon:"🚆",title:"Florence ↔ Pisa",from:"Firenze S. M. Novella",depart:"Early morning",to:"Pisa Centrale",arrive:"To be booked",details:"Outbound and return trains still need to be selected.",group:"Trains",walletTitle:"Florence ↔ Pisa",walletTime:"Early morning",provider:"https://www.trenitalia.com/",map:"https://www.google.com/maps/search/?api=1&query=Firenze+Santa+Maria+Novella"},
+  {date:"Sep 20",sort:"2026-09-20T10:03",type:"Train",icon:"🚆",title:"Italo 8953 — Florence to Rome",from:"Firenze S. M. Novella",depart:"10:03 AM",to:"Roma Termini",arrive:"11:40 AM",details:"Code NJYG5X · Coach 6 · Seats 1 & 2",group:"Trains",walletTitle:"Italo 8953 — Florence to Rome",walletTime:"10:03 AM",provider:"https://www.italotreno.com/",map:"https://www.google.com/maps/search/?api=1&query=Firenze+Santa+Maria+Novella"},
+  {date:"Sep 24",sort:"2026-09-24T09:41",type:"Train",icon:"🚆",title:"Italo 9967 — Rome to Naples",from:"Roma Termini",depart:"9:41 AM",to:"Napoli Centrale",arrive:"10:53 AM",details:"Code BL65HR · Coach 7 · Seats 1 & 2",group:"Trains",walletTitle:"Italo 9967 — Rome to Naples",walletTime:"9:41 AM",provider:"https://www.italotreno.com/",map:"https://www.google.com/maps/search/?api=1&query=Roma+Termini"},
+  {date:"Sep 25",sort:"2026-09-25T08:05",type:"Ferry",icon:"🚤",title:"SNAV Naples to Capri",from:"Naples ferry terminal",depart:"8:05 AM",to:"Marina Grande, Capri",arrive:"Morning",details:"Check in by 7:35 AM · Booking PWIP2608020174",group:"Ferries",walletTitle:"SNAV Naples ⇄ Capri Round Trip",walletTime:"8:05 AM outbound · 6:10 PM return",provider:"https://www.snav.it/",map:"https://www.google.com/maps/search/?api=1&query=Molo+Beverello+Naples"},
+  {date:"Sep 25",sort:"2026-09-25T18:10",type:"Ferry",icon:"🚤",title:"SNAV Capri to Naples",from:"Marina Grande, Capri",depart:"6:10 PM",to:"Naples ferry terminal",arrive:"Evening",details:"Check in by 5:40 PM · Same round-trip booking",group:"Ferries",walletTitle:"SNAV Naples ⇄ Capri Round Trip",walletTime:"8:05 AM outbound · 6:10 PM return",provider:"https://www.snav.it/",map:"https://www.google.com/maps/search/?api=1&query=Marina+Grande+Capri"},
+  {date:"Sep 27",sort:"2026-09-27T07:40",type:"Flight",icon:"✈️",title:"BA 6647 — Naples to London",from:"Naples (NAP)",depart:"7:40 AM",to:"London Heathrow (LHR)",arrive:"9:45 AM",group:"Flights",walletTitle:"BA 6647 — Naples to London",walletTime:"7:40 AM",provider:"https://www.britishairways.com/",map:"https://www.google.com/maps/search/?api=1&query=Naples+International+Airport"},
+  {date:"Sep 27",sort:"2026-09-27T12:15",type:"Flight",icon:"✈️",title:"AA 39 — London to Miami",from:"London Heathrow (LHR)",depart:"12:15 PM",to:"Miami (MIA)",arrive:"5:00 PM",group:"Flights",walletTitle:"AA 39 — London to Miami",walletTime:"12:15 PM",provider:"https://www.aa.com/",map:"https://www.google.com/maps/search/?api=1&query=London+Heathrow+Airport"}
+];
+
+async function renderTransport(){
+  let imported=[];
+  try{imported=await getImportedTickets()}catch(error){console.error("Ticket database unavailable",error)}
+  const linked={};
+  imported.filter(x=>x.linkedWalletKey).forEach(x=>(linked[x.linkedWalletKey]||=[]).push(x));
+  const filters=["All","Flight","Train","Ferry"];
+  const cards=TRANSPORT_LEGS.sort((a,b)=>a.sort.localeCompare(b)).map((leg,index)=>{
+    const walletItem={title:leg.walletTitle,date:leg.date,time:leg.walletTime};
+    const files=linked[walletItemKey(leg.group,walletItem)]||[];
+    return `<article class="transport-card" data-transport-card data-type="${leg.type}">
+      <div class="transport-topline"><span class="transport-kind">${leg.icon} ${leg.type}</span><span>${leg.date}</span></div>
+      <h3>${leg.title}</h3>
+      <div class="transport-route">
+        <div><small>DEPART</small><strong>${leg.depart}</strong><span>${leg.from}</span></div>
+        <div class="transport-line"><span>→</span></div>
+        <div><small>ARRIVE</small><strong>${leg.arrive}</strong><span>${leg.to}</span></div>
+      </div>
+      ${leg.details?`<div class="transport-details">${leg.details}</div>`:""}
+      <div class="transport-actions">
+        ${files.length?`<button class="primary" data-open-imported="${files[0].id}">Open ticket</button>`:`<button class="secondary" data-open="wallet">Wallet</button>`}
+        <a class="secondary" href="${leg.map}" target="_blank" rel="noopener">Departure map</a>
+        <a class="secondary" href="${leg.provider}" target="_blank" rel="noopener">Provider</a>
+      </div>
+      ${files.length>1?`<div class="transport-extra-files">${files.slice(1).map(file=>`<button class="secondary" data-open-imported="${file.id}">${escapeHTML(file.fileName)}</button>`).join("")}</div>`:""}
+    </article>`;
+  }).join("");
+
+  qs("#transport").innerHTML=`
+    <div class="section-title"><div><button class="back-link" data-back="more">‹ More</button><h2>Transportation</h2></div><span class="small">All travel legs</span></div>
+    <div class="transport-hero"><div><div class="focus-label">TRIP MOVEMENT</div><h2>Flights, trains and ferries</h2><p>Every major transfer in chronological order, with tickets and departure points close at hand.</p></div><div class="transport-count"><strong>${TRANSPORT_LEGS.length}</strong><span>legs</span></div></div>
+    <div class="transport-filter-row">${filters.map((x,i)=>`<button class="wallet-filter ${i===0?"active":""}" data-transport-filter="${x}">${x}</button>`).join("")}</div>
+    <div class="transport-list">${cards}</div>`;
+
+  qsa("[data-transport-filter]").forEach(button=>button.addEventListener("click",()=>{
+    qsa("[data-transport-filter]").forEach(x=>x.classList.remove("active"));button.classList.add("active");
+    qsa("[data-transport-card]").forEach(card=>card.classList.toggle("hidden",button.dataset.transportFilter!=="All"&&card.dataset.type!==button.dataset.transportFilter));
+  }));
+  qsa("#transport [data-open-imported]").forEach(button=>button.addEventListener("click",async()=>{
+    const popup=window.open("","_blank");
+    try{const ticket=await getImportedTicket(button.dataset.openImported);if(!ticket||!ticket.blob)throw new Error("Ticket not found");const url=URL.createObjectURL(ticket.blob);if(popup)popup.location=url;else window.location.href=url;setTimeout(()=>URL.revokeObjectURL(url),120000)}
+    catch(error){if(popup)popup.close();alert("This ticket could not be opened.")}
+  }));
+  bindInternalNavigation();
+}
+
 function renderMore(){
   qs("#more").innerHTML=`
     <div class="section-title"><h2>More</h2><span class="small">Trip tools</span></div>
@@ -758,6 +817,7 @@ function renderMore(){
     <button class="menu-card" data-open="packing"><div><strong>Packing checklist</strong><span>Track what is ready</span></div><div>›</div></button>
     <button class="menu-card" data-open="notes"><div><strong>Trip notes</strong><span>Confirmation numbers and reminders</span></div><div>›</div></button>
     <button class="menu-card" data-open="currency"><div><strong>Currency converter</strong><span>Convert euros and dollars</span></div><div>›</div></button>
+    <button class="menu-card" data-open="transport"><div><strong>Transportation timeline</strong><span>Flights, trains and ferries in order</span></div><div>›</div></button>
     <div class="info-card" style="margin-top:16px">
       <strong>Offline-ready</strong>
       <div class="small">Once refreshed after an update, the app keeps working without a connection.</div>
@@ -790,6 +850,7 @@ renderBookings();
 renderPacking();
 renderNotes();
 renderCurrency();
+renderTransport();
 
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("./sw.js").catch(()=>{});
