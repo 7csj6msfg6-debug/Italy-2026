@@ -561,55 +561,191 @@ async function renderWallet(){
 function escapeHTML(value){return String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));}
 function formatFileSize(bytes){if(bytes<1024)return `${bytes} B`;if(bytes<1024*1024)return `${(bytes/1024).toFixed(1)} KB`;return `${(bytes/1024/1024).toFixed(1)} MB`;}
 
+function guideLoad(key,fallback=[]){
+  try{return JSON.parse(localStorage.getItem(P+key)||JSON.stringify(fallback))}catch{return fallback}
+}
+function guideSave(key,value){try{localStorage.setItem(P+key,JSON.stringify(value))}catch{}}
+function guideUid(){return `${Date.now()}-${Math.random().toString(36).slice(2,8)}`}
+function guideMapsUrl(place){
+  if(place.maps)return place.maps;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([place.name,place.city].filter(Boolean).join(', '))}`;
+}
+function normalizeWebUrl(value){
+  const v=(value||'').trim();
+  if(!v)return '';
+  return /^https?:\/\//i.test(v)?v:`https://${v}`;
+}
 function renderGuide(){
-  const cities=Object.keys(cityGuide);
-  qs("#guide").innerHTML=`
-    <div class="section-title"><h2>City guide</h2><span class="small">Personal recommendations</span></div>
-    <div class="guide-tabs">${cities.map((c,i)=>`<button class="chip ${i===0?"active":""}" data-guide-city="${c}">${c}</button>`).join("")}</div>
-    <div id="guideCards"></div>
+  const cities=['Venice','Florence','Rome','Naples','Capri'];
+  const categories=['Breakfast','Coffee','Lunch','Dinner','Gelato','Pizza','Bar','Shopping','Sightseeing','Other'];
+  const expenseCategories=['Food','Transportation','Activities','Shopping','Hotel','Other'];
+  const tripDays=trip.map(day=>({date:day.date,label:`${shortDate(day.date)} · ${day.city}`}));
+  let activeSection='places',activeCity='All',placeSearch='',editingPlaceId=null;
 
-    <h2>Expense tracker</h2>
-    <div class="expense-card">
-      <div class="expense-form">
-        <input id="expenseName" placeholder="Expense name">
-        <input id="expenseAmount" type="number" step="0.01" placeholder="€ Amount">
+  qs('#guide').innerHTML=`
+    <div class="section-title"><div><h2>Places & spending</h2><span class="small">Your personal city guide and trip expenses</span></div></div>
+    <div class="guide-section-tabs">
+      <button class="guide-section-tab active" data-guide-section="places">Places</button>
+      <button class="guide-section-tab" data-guide-section="spending">Spending</button>
+    </div>
+
+    <section id="guidePlacesSection">
+      <div class="guide-toolbar">
+        <label class="guide-search"><span>⌕</span><input id="placeSearch" type="search" placeholder="Search saved places"></label>
+        <button class="primary guide-add-place" id="openPlaceEditor">＋ Add place</button>
       </div>
-      <div class="button-row"><button class="primary" id="addExpense">Add expense</button></div>
-      <div id="expenseSummary"></div>
+      <div class="guide-tabs guide-city-tabs">
+        ${['All',...cities].map((c,i)=>`<button class="chip ${i===0?'active':''}" data-guide-city="${c}">${c}</button>`).join('')}
+      </div>
+      <div id="guidePlacesSummary"></div>
+      <div id="guideCards"></div>
+    </section>
+
+    <section id="guideSpendingSection" class="hidden">
+      <div class="expense-summary-grid" id="expenseSummary"></div>
+      <div class="expense-card expense-upgraded">
+        <div class="expense-form upgraded">
+          <label><span>Name</span><input id="expenseName" placeholder="Dinner in Rome"></label>
+          <label><span>Amount (€)</span><input id="expenseAmount" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0.00"></label>
+          <label><span>Category</span><select id="expenseCategory">${expenseCategories.map(x=>`<option>${x}</option>`).join('')}</select></label>
+          <label><span>City</span><select id="expenseCity"><option>General</option>${cities.map(x=>`<option>${x}</option>`).join('')}</select></label>
+          <label><span>Date</span><span class="date-input-shell"><input id="expenseDate" type="date"></span></label>
+          <label><span>Payment</span><select id="expensePayment"><option>Credit card</option><option>Cash</option><option>Debit card</option><option>Other</option></select></label>
+        </div>
+        <button class="primary expense-save" id="addExpense">Add expense</button>
+      </div>
+      <div class="expense-filter-row">
+        <select id="expenseFilter"><option value="All">All categories</option>${expenseCategories.map(x=>`<option>${x}</option>`).join('')}</select>
+        <button class="secondary" id="clearExpenses">Clear all</button>
+      </div>
+      <div id="expenseBreakdown"></div>
       <div id="expenseList"></div>
+    </section>
+
+    <div class="place-editor-overlay hidden" id="placeEditorOverlay">
+      <div class="place-editor-sheet" role="dialog" aria-modal="true" aria-labelledby="placeEditorTitle">
+        <div class="ticket-import-head"><div><div class="focus-label">PERSONAL CITY GUIDE</div><h2 id="placeEditorTitle">Add place</h2></div><button class="ticket-close" id="closePlaceEditor" aria-label="Close">×</button></div>
+        <div class="place-editor-grid">
+          <label class="ticket-field full"><span>Place name</span><input id="placeName" placeholder="Restaurant, café or attraction"></label>
+          <label class="ticket-field"><span>City</span><select id="placeCity">${cities.map(x=>`<option>${x}</option>`).join('')}</select></label>
+          <label class="ticket-field"><span>Category</span><select id="placeCategory">${categories.map(x=>`<option>${x}</option>`).join('')}</select></label>
+          <label class="ticket-field full"><span>Notes</span><textarea id="placeNotes" placeholder="What to order, reservation time, neighborhood, dress code..."></textarea></label>
+          <label class="ticket-field full"><span>Google Maps link (optional)</span><input id="placeMaps" inputmode="url" placeholder="Leave blank to search by name"></label>
+          <label class="ticket-field"><span>Phone (optional)</span><input id="placePhone" inputmode="tel" placeholder="+39 ..."></label>
+          <label class="ticket-field"><span>Website (optional)</span><input id="placeWebsite" inputmode="url" placeholder="restaurant.com"></label>
+          <label class="ticket-field full"><span>Planned day (optional)</span><select id="placeDay"><option value="">Not scheduled</option>${tripDays.map(x=>`<option value="${x.date}">${x.label}</option>`).join('')}</select></label>
+          <label class="form-check full"><input class="form-check-input" id="placeFavorite" type="checkbox"><span class="form-check-label">Mark as favorite</span></label>
+        </div>
+        <div class="ticket-import-message" id="placeEditorMessage" aria-live="polite"></div>
+        <button class="primary ticket-save" id="savePlace">Save place</button>
+      </div>
     </div>`;
 
-  const showCity=city=>{
-    qs("#guideCards").innerHTML=cityGuide[city].map(x=>`<div class="guide-card"><strong>${x.type}: ${x.name}</strong><div class="small">${x.note}</div></div>`).join("");
-  };
-  if(cities.length)showCity(cities[0]);
-  qsa("[data-guide-city]").forEach(btn=>btn.addEventListener("click",()=>{
-    qsa("[data-guide-city]").forEach(x=>x.classList.remove("active"));
-    btn.classList.add("active");
-    showCity(btn.dataset.guideCity);
+  const placesSection=qs('#guidePlacesSection'), spendingSection=qs('#guideSpendingSection');
+  qsa('[data-guide-section]').forEach(button=>button.addEventListener('click',()=>{
+    activeSection=button.dataset.guideSection;
+    qsa('[data-guide-section]').forEach(x=>x.classList.toggle('active',x===button));
+    placesSection.classList.toggle('hidden',activeSection!=='places');
+    spendingSection.classList.toggle('hidden',activeSection!=='spending');
   }));
 
+  const renderPlaces=()=>{
+    const places=guideLoad('guide-places',[]);
+    const filtered=places.filter(p=>(activeCity==='All'||p.city===activeCity)&&(!placeSearch||`${p.name} ${p.city} ${p.category} ${p.notes||''}`.toLowerCase().includes(placeSearch)));
+    const favorites=places.filter(p=>p.favorite).length;
+    qs('#guidePlacesSummary').innerHTML=`<div class="guide-mini-summary"><span><strong>${places.length}</strong> saved</span><span><strong>${favorites}</strong> favorite${favorites===1?'':'s'}</span></div>`;
+    const sorted=[...filtered].sort((a,b)=>Number(b.favorite)-Number(a.favorite)||a.city.localeCompare(b.city)||a.name.localeCompare(b.name));
+    qs('#guideCards').innerHTML=sorted.length?sorted.map(p=>{
+      const day=p.plannedDay?trip.find(d=>d.date===p.plannedDay):null;
+      return `<article class="guide-place-card">
+        <div class="guide-place-head">
+          <div><div class="guide-place-kicker">${escapeHTML(p.city)} · ${escapeHTML(p.category)}</div><h3>${escapeHTML(p.name)}</h3></div>
+          <button class="favorite-button ${p.favorite?'active':''}" data-favorite-place="${p.id}" aria-label="${p.favorite?'Remove favorite':'Add favorite'}">★</button>
+        </div>
+        ${p.notes?`<p>${escapeHTML(p.notes)}</p>`:''}
+        ${day?`<div class="guide-planned-day">Planned ${shortDate(p.plannedDay)} · ${escapeHTML(day.city)}</div>`:''}
+        <div class="guide-place-actions">
+          <a class="primary" href="${escapeHTML(guideMapsUrl(p))}" target="_blank" rel="noopener">Maps</a>
+          ${p.phone?`<a class="secondary" href="tel:${escapeHTML(p.phone.replace(/[^+\d]/g,''))}">Call</a>`:''}
+          ${p.website?`<a class="secondary" href="${escapeHTML(normalizeWebUrl(p.website))}" target="_blank" rel="noopener">Website</a>`:''}
+          <button class="secondary" data-edit-place="${p.id}">Edit</button>
+          <button class="secondary danger-text" data-delete-place="${p.id}">Delete</button>
+        </div>
+      </article>`;
+    }).join(''):`<div class="guide-empty"><strong>${places.length?'No matching places':'No saved places yet'}</strong><span>${places.length?'Try another city or search.':'Add restaurants, cafés, gelato shops and sights you want handy during the trip.'}</span></div>`;
+
+    qsa('[data-favorite-place]').forEach(btn=>btn.addEventListener('click',()=>{
+      const items=guideLoad('guide-places',[]), item=items.find(x=>x.id===btn.dataset.favoritePlace);if(!item)return;
+      item.favorite=!item.favorite;guideSave('guide-places',items);renderPlaces();
+    }));
+    qsa('[data-delete-place]').forEach(btn=>btn.addEventListener('click',()=>{
+      const items=guideLoad('guide-places',[]), item=items.find(x=>x.id===btn.dataset.deletePlace);if(!item)return;
+      if(!confirm(`Delete ${item.name}?`))return;
+      guideSave('guide-places',items.filter(x=>x.id!==item.id));renderPlaces();
+    }));
+    qsa('[data-edit-place]').forEach(btn=>btn.addEventListener('click',()=>openPlaceEditor(btn.dataset.editPlace)));
+  };
+
+  qsa('[data-guide-city]').forEach(btn=>btn.addEventListener('click',()=>{
+    activeCity=btn.dataset.guideCity;qsa('[data-guide-city]').forEach(x=>x.classList.toggle('active',x===btn));renderPlaces();
+  }));
+  qs('#placeSearch').addEventListener('input',e=>{placeSearch=e.target.value.trim().toLowerCase();renderPlaces()});
+
+  const overlay=qs('#placeEditorOverlay');
+  const openPlaceEditor=id=>{
+    editingPlaceId=id||null;
+    const item=id?guideLoad('guide-places',[]).find(x=>x.id===id):null;
+    qs('#placeEditorTitle').textContent=item?'Edit place':'Add place';
+    qs('#placeName').value=item?.name||'';qs('#placeCity').value=item?.city||(activeCity==='All'?'Venice':activeCity);
+    qs('#placeCategory').value=item?.category||'Dinner';qs('#placeNotes').value=item?.notes||'';qs('#placeMaps').value=item?.maps||'';
+    qs('#placePhone').value=item?.phone||'';qs('#placeWebsite').value=item?.website||'';qs('#placeDay').value=item?.plannedDay||'';qs('#placeFavorite').checked=!!item?.favorite;
+    qs('#placeEditorMessage').textContent='';overlay.classList.remove('hidden');setTimeout(()=>qs('#placeName').focus(),50);
+  };
+  qs('#openPlaceEditor').addEventListener('click',()=>openPlaceEditor());
+  qs('#closePlaceEditor').addEventListener('click',()=>overlay.classList.add('hidden'));
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.add('hidden')});
+  qs('#savePlace').addEventListener('click',()=>{
+    const name=qs('#placeName').value.trim();if(!name){qs('#placeEditorMessage').textContent='Enter a place name.';return}
+    const items=guideLoad('guide-places',[]);
+    const value={id:editingPlaceId||guideUid(),name,city:qs('#placeCity').value,category:qs('#placeCategory').value,notes:qs('#placeNotes').value.trim(),maps:qs('#placeMaps').value.trim(),phone:qs('#placePhone').value.trim(),website:qs('#placeWebsite').value.trim(),plannedDay:qs('#placeDay').value,favorite:qs('#placeFavorite').checked};
+    const index=items.findIndex(x=>x.id===editingPlaceId);if(index>=0)items[index]=value;else items.push(value);
+    guideSave('guide-places',items);overlay.classList.add('hidden');activeCity=value.city;qsa('[data-guide-city]').forEach(x=>x.classList.toggle('active',x.dataset.guideCity===activeCity));renderPlaces();
+  });
+  renderPlaces();
+
+  qs('#expenseDate').value=todayISO();
+  let expenseFilter='All';
+  const getRate=()=>Number(localStorage.getItem(P+'currency-rate'))||1.15;
   const loadExpenses=()=>{
-    let items=[];try{items=JSON.parse(localStorage.getItem(P+"expenses")||"[]")}catch{}
-    const total=items.reduce((n,x)=>n+Number(x.amount||0),0);
-    qs("#expenseSummary").innerHTML=`<div class="expense-total">€${total.toFixed(2)}</div><div class="small">Total logged spending</div>`;
-    qs("#expenseList").innerHTML=items.length?items.map((x,i)=>`<div class="expense-row"><span>${x.name}</span><span>€${Number(x.amount).toFixed(2)} <button class="danger-button" data-delete-expense="${i}">Delete</button></span></div>`).join(""):`<div class="small" style="margin-top:12px">No expenses logged yet.</div>`;
-    qsa("[data-delete-expense]").forEach(btn=>btn.addEventListener("click",()=>{
-      items.splice(Number(btn.dataset.deleteExpense),1);
-      localStorage.setItem(P+"expenses",JSON.stringify(items));
-      loadExpenses();
+    let items=guideLoad('expenses',[]).map((x,i)=>({id:x.id||`legacy-${i}`,name:x.name||'Expense',amount:Number(x.amount)||0,category:x.category||'Other',city:x.city||'General',date:x.date||'',payment:x.payment||'Other',createdAt:x.createdAt||i}));
+    guideSave('expenses',items);
+    const visible=expenseFilter==='All'?items:items.filter(x=>x.category===expenseFilter);
+    const total=items.reduce((n,x)=>n+x.amount,0),rate=getRate(),usd=total*rate;
+    qs('#expenseSummary').innerHTML=`
+      <div class="expense-stat"><span>Trip total</span><strong>€${total.toFixed(2)}</strong></div>
+      <div class="expense-stat"><span>Estimated USD</span><strong>$${usd.toFixed(2)}</strong><small>Rate ${rate.toFixed(4)}</small></div>
+      <div class="expense-stat"><span>Entries</span><strong>${items.length}</strong></div>`;
+    const categoryTotals=expenseCategories.map(cat=>({cat,total:items.filter(x=>x.category===cat).reduce((n,x)=>n+x.amount,0)})).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+    qs('#expenseBreakdown').innerHTML=categoryTotals.length?`<div class="expense-breakdown"><h3>By category</h3>${categoryTotals.map(x=>`<div><span>${x.cat}</span><strong>€${x.total.toFixed(2)}</strong></div>`).join('')}</div>`:'';
+    const sorted=[...visible].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||Number(b.createdAt)-Number(a.createdAt));
+    qs('#expenseList').innerHTML=sorted.length?sorted.map(x=>`<article class="expense-item">
+      <div><strong>${escapeHTML(x.name)}</strong><span>${escapeHTML(x.category)} · ${escapeHTML(x.city)}${x.date?` · ${shortDate(x.date)}`:''}</span><small>${escapeHTML(x.payment)}</small></div>
+      <div class="expense-item-amount"><strong>€${x.amount.toFixed(2)}</strong><span>$${(x.amount*rate).toFixed(2)}</span><button class="danger-text" data-delete-expense="${x.id}">Delete</button></div>
+    </article>`).join(''):`<div class="guide-empty"><strong>No expenses ${expenseFilter==='All'?'logged':'in this category'}</strong><span>Add an expense above to start tracking your trip spending.</span></div>`;
+    qsa('[data-delete-expense]').forEach(btn=>btn.addEventListener('click',()=>{
+      const current=guideLoad('expenses',[]), item=current.find(x=>String(x.id)===btn.dataset.deleteExpense);if(!item)return;
+      if(!confirm(`Delete ${item.name}?`))return;guideSave('expenses',current.filter(x=>String(x.id)!==btn.dataset.deleteExpense));loadExpenses();
     }));
   };
-  loadExpenses();
-  qs("#addExpense").addEventListener("click",()=>{
-    const name=qs("#expenseName").value.trim(),amount=Number(qs("#expenseAmount").value);
-    if(!name||!amount)return;
-    let items=[];try{items=JSON.parse(localStorage.getItem(P+"expenses")||"[]")}catch{}
-    items.push({name,amount});
-    localStorage.setItem(P+"expenses",JSON.stringify(items));
-    qs("#expenseName").value="";qs("#expenseAmount").value="";
-    loadExpenses();
+  qs('#addExpense').addEventListener('click',()=>{
+    const name=qs('#expenseName').value.trim(),amount=Number(qs('#expenseAmount').value);
+    if(!name||!Number.isFinite(amount)||amount<=0){alert('Enter an expense name and an amount greater than zero.');return}
+    const items=guideLoad('expenses',[]);items.push({id:guideUid(),name,amount,category:qs('#expenseCategory').value,city:qs('#expenseCity').value,date:qs('#expenseDate').value,payment:qs('#expensePayment').value,createdAt:Date.now()});guideSave('expenses',items);
+    qs('#expenseName').value='';qs('#expenseAmount').value='';loadExpenses();
   });
+  qs('#expenseFilter').addEventListener('change',e=>{expenseFilter=e.target.value;loadExpenses()});
+  qs('#clearExpenses').addEventListener('click',()=>{const items=guideLoad('expenses',[]);if(!items.length)return;if(confirm('Delete every logged expense?')){guideSave('expenses',[]);loadExpenses()}});
+  loadExpenses();
 }
 function renderBookings(){
   qs("#bookings").innerHTML=`
