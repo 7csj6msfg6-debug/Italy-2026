@@ -6,6 +6,54 @@ const wallet = window.TICKET_WALLET || [];
 const cityGuide = window.CITY_GUIDE || {};
 const P = "italy2026-v4-";
 
+
+const TICKET_DB_NAME = "italy2026-ticket-wallet";
+const TICKET_DB_VERSION = 1;
+const TICKET_STORE = "tickets";
+
+function openTicketDB(){
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open(TICKET_DB_NAME,TICKET_DB_VERSION);
+    request.onupgradeneeded=()=>{
+      const db=request.result;
+      if(!db.objectStoreNames.contains(TICKET_STORE)){
+        const store=db.createObjectStore(TICKET_STORE,{keyPath:"id",autoIncrement:true});
+        store.createIndex("category","category",{unique:false});
+        store.createIndex("createdAt","createdAt",{unique:false});
+      }
+    };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+  });
+}
+function ticketDBAction(mode,callback){
+  return openTicketDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(TICKET_STORE,mode);
+    const store=tx.objectStore(TICKET_STORE);
+    let result;
+    try{result=callback(store)}catch(error){reject(error);return}
+    tx.oncomplete=()=>resolve(result&&result.result!==undefined?result.result:result);
+    tx.onerror=()=>reject(tx.error);
+  }));
+}
+function getImportedTickets(){
+  return openTicketDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(TICKET_STORE,"readonly");
+    const request=tx.objectStore(TICKET_STORE).getAll();
+    request.onsuccess=()=>resolve((request.result||[]).sort((a,b)=>b.createdAt-a.createdAt));
+    request.onerror=()=>reject(request.error);
+  }));
+}
+function saveImportedTicket(ticket){return ticketDBAction("readwrite",store=>store.add(ticket));}
+function deleteImportedTicket(id){return ticketDBAction("readwrite",store=>store.delete(Number(id)));}
+function getImportedTicket(id){
+  return openTicketDB().then(db=>new Promise((resolve,reject)=>{
+    const request=db.transaction(TICKET_STORE,"readonly").objectStore(TICKET_STORE).get(Number(id));
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+  }));
+}
+
 const qs = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 const todayISO = () => new Date().toISOString().slice(0,10);
@@ -247,28 +295,41 @@ function renderTrip(){
   }));
   bindDayCards();
 }
-function renderWallet(){
+async function renderWallet(){
   const allItems=wallet.flatMap(group=>group.items);
   const ready=allItems.filter(item=>item.status==="Ready").length;
   const statusClass=status=>status==="Ready"?"ready":status==="To book"?"warn":"needed";
+  let imported=[];
+  try{imported=await getImportedTickets()}catch(error){console.error("Ticket database unavailable",error)}
+  const categories=["Flight","Train","Hotel","Attraction","Ferry","Tour","Other"];
+  const icons={Flight:"✈️",Train:"🚆",Hotel:"🏨",Attraction:"🎟️",Ferry:"🚤",Tour:"🍷",Other:"📄"};
+  const importedGroups=categories.map(category=>({category,items:imported.filter(item=>item.category===category)})).filter(group=>group.items.length);
+
   qs("#wallet").innerHTML=`
-    <div class="section-title"><h2>Ticket wallet</h2><span class="small">${ready} ready · ${allItems.length} total</span></div>
+    <div class="section-title"><h2>Ticket wallet</h2><span class="small">${ready+imported.length} ready</span></div>
+    <button class="wallet-add-button" id="openTicketImporter"><span>＋</span><div><strong>Add a ticket</strong><small>Choose a PDF or image from Files</small></div></button>
     <div class="wallet-summary">
-      <div><strong>${ready}</strong><span>Documents ready</span></div>
-      <div><strong>${allItems.filter(x=>x.status==="Ticket needed").length}</strong><span>Files still needed</span></div>
+      <div><strong>${ready}</strong><span>Built-in documents</span></div>
+      <div><strong>${imported.length}</strong><span>Added on this iPhone</span></div>
       <div><strong>${allItems.filter(x=>x.status==="To book").length}</strong><span>Still to book</span></div>
     </div>
-    <div class="callout">Your added PDFs are stored inside the app for offline access. Open every important ticket once after updating so Safari can cache it on your phone.</div>
+    <div class="callout">Tickets you add here are stored offline only on this device. They are not uploaded to GitHub or sent anywhere. Clearing Safari website data can remove them.</div>
+
+    ${importedGroups.length?`<section class="wallet-group imported-wallet-group">
+      <h3>📱 Added on this device</h3>
+      ${importedGroups.map(group=>`<div class="imported-category"><div class="imported-category-title">${icons[group.category]} ${group.category}s</div>${group.items.map(item=>`
+        <article class="wallet-item wallet-document-card imported-ticket-card">
+          <div class="wallet-top"><div><div class="wallet-title">${escapeHTML(item.name)}</div><div class="small">${escapeHTML(item.date||"No date")} ${item.time?`· ${escapeHTML(item.time)}`:""}</div></div><span class="wallet-status ready">Saved offline</span></div>
+          ${item.notes?`<div class="wallet-note">${escapeHTML(item.notes)}</div>`:""}
+          <div class="small imported-file-name">${escapeHTML(item.fileName)} · ${formatFileSize(item.size)}</div>
+          <div class="wallet-actions"><button class="primary wallet-file-button" data-open-imported="${item.id}">📄 Open ticket</button><button class="secondary wallet-file-button danger-text" data-delete-imported="${item.id}">Delete</button></div>
+        </article>`).join("")}</div>`).join("")}
+    </section>`:""}
+
     ${wallet.map(group=>`<section class="wallet-group">
       <h3>${group.icon} ${group.group}</h3>
       ${group.items.map(item=>`<article class="wallet-item wallet-document-card">
-        <div class="wallet-top">
-          <div>
-            <div class="wallet-title">${item.title}</div>
-            <div class="small">${item.date} · ${item.time}</div>
-          </div>
-          <span class="wallet-status ${statusClass(item.status)}">${item.status}</span>
-        </div>
+        <div class="wallet-top"><div><div class="wallet-title">${item.title}</div><div class="small">${item.date} · ${item.time}</div></div><span class="wallet-status ${statusClass(item.status)}">${item.status}</span></div>
         ${item.details?`<div class="wallet-details">${item.details}</div>`:""}
         ${item.note?`<div class="wallet-note">${item.note}</div>`:""}
         <div class="wallet-actions">
@@ -277,8 +338,59 @@ function renderWallet(){
           ${!(item.documents||[]).length?`<button class="secondary wallet-file-button" disabled>No document added yet</button>`:""}
         </div>
       </article>`).join("")}
-    </section>`).join("")}`;
+    </section>`).join("")}
+
+    <div class="ticket-import-overlay hidden" id="ticketImportOverlay">
+      <div class="ticket-import-sheet" role="dialog" aria-modal="true" aria-labelledby="ticketImportTitle">
+        <div class="ticket-import-head"><div><div class="focus-label">OFFLINE WALLET</div><h2 id="ticketImportTitle">Add ticket</h2></div><button class="ticket-close" id="closeTicketImporter" aria-label="Close">×</button></div>
+        <label class="ticket-field"><span>PDF or image</span><input id="ticketFile" type="file" accept="application/pdf,image/*"></label>
+        <label class="ticket-field"><span>Category</span><select id="ticketCategory">${categories.map(c=>`<option value="${c}">${c}</option>`).join("")}</select></label>
+        <label class="ticket-field"><span>Ticket name</span><input id="ticketName" placeholder="Vatican Museums"></label>
+        <div class="ticket-field-grid"><label class="ticket-field"><span>Date</span><input id="ticketDate" type="date"></label><label class="ticket-field"><span>Time</span><input id="ticketTime" type="time"></label></div>
+        <label class="ticket-field"><span>Notes (optional)</span><textarea id="ticketNotes" placeholder="Confirmation number, entrance, seat, meeting point..."></textarea></label>
+        <div class="ticket-import-message" id="ticketImportMessage" aria-live="polite"></div>
+        <button class="primary ticket-save" id="saveImportedTicket">Save ticket offline</button>
+      </div>
+    </div>`;
+
+  const overlay=qs("#ticketImportOverlay");
+  qs("#openTicketImporter").addEventListener("click",()=>overlay.classList.remove("hidden"));
+  qs("#closeTicketImporter").addEventListener("click",()=>overlay.classList.add("hidden"));
+  overlay.addEventListener("click",event=>{if(event.target===overlay)overlay.classList.add("hidden")});
+  qs("#ticketFile").addEventListener("change",event=>{
+    const file=event.target.files[0];
+    if(file&&!qs("#ticketName").value)qs("#ticketName").value=file.name.replace(/\.[^.]+$/,"").replace(/[-_]+/g," ");
+  });
+  qs("#saveImportedTicket").addEventListener("click",async()=>{
+    const file=qs("#ticketFile").files[0],name=qs("#ticketName").value.trim(),message=qs("#ticketImportMessage"),button=qs("#saveImportedTicket");
+    if(!file){message.textContent="Choose a PDF or image first.";return}
+    if(!name){message.textContent="Enter a name for the ticket.";return}
+    if(file.size>40*1024*1024){message.textContent="This file is larger than 40 MB. Choose a smaller copy.";return}
+    button.disabled=true;button.textContent="Saving…";message.textContent="";
+    try{
+      await saveImportedTicket({name,category:qs("#ticketCategory").value,date:qs("#ticketDate").value,time:qs("#ticketTime").value,notes:qs("#ticketNotes").value.trim(),fileName:file.name,type:file.type||"application/octet-stream",size:file.size,blob:file,createdAt:Date.now()});
+      await renderWallet();
+    }catch(error){console.error(error);button.disabled=false;button.textContent="Save ticket offline";message.textContent="The ticket could not be saved. Check available storage and try again."}
+  });
+  qsa("[data-open-imported]").forEach(button=>button.addEventListener("click",async()=>{
+    const popup=window.open("","_blank");
+    try{
+      const ticket=await getImportedTicket(button.dataset.openImported);
+      if(!ticket||!ticket.blob)throw new Error("Ticket not found");
+      const url=URL.createObjectURL(ticket.blob);
+      if(popup)popup.location=url;else window.location.href=url;
+      setTimeout(()=>URL.revokeObjectURL(url),120000);
+    }catch(error){if(popup)popup.close();alert("This ticket could not be opened.")}
+  }));
+  qsa("[data-delete-imported]").forEach(button=>button.addEventListener("click",async()=>{
+    if(!confirm("Delete this ticket from this device?"))return;
+    await deleteImportedTicket(button.dataset.deleteImported);
+    await renderWallet();
+  }));
 }
+function escapeHTML(value){return String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));}
+function formatFileSize(bytes){if(bytes<1024)return `${bytes} B`;if(bytes<1024*1024)return `${(bytes/1024).toFixed(1)} KB`;return `${(bytes/1024/1024).toFixed(1)} MB`;}
+
 function renderGuide(){
   const cities=Object.keys(cityGuide);
   qs("#guide").innerHTML=`
