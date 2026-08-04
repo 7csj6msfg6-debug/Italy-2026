@@ -18,7 +18,7 @@ window.TICKET_WALLET = [
     {label:"Open train ticket",file:"tickets/rome-naples-train.pdf"}]},
   {title:"Florence ↔ Pisa",date:"Sep 19",time:"Early morning",status:"To book",note:"Train has not been booked yet."}]},
  {group:"Attractions", icon:"🎟️", items:[
-  {title:"St. Mark’s Basilica & Doge’s Palace",date:"Sep 16",time:"10:00 AM",status:"Ready",details:"2 adults · Booking 1414055849 · Meet just past Caffè Florian · Look for purple-shirt staff",map:"https://www.google.com/maps/search/?api=1&query=Caffe+Florian+Venice",documents:[
+  {title:"St. Mark’s Basilica & Doge’s Palace",date:"Sep 16",time:"10:00 AM",status:"Ready",details:"2 adults · Booking 1414055849 · Meet just past Caffè Florian · Look for purple-shirt staff",map:"https://www.google.com/maps/search/?api=1&query=Caff%C3%A8+Florian%2C+Piazza+San+Marco+57%2C+30124+Venezia+VE%2C+Italy",mapLabel:"Meeting point",documents:[
     {label:"Open St. Mark’s & Doge’s voucher",file:"tickets/st-marks-doges-palace-voucher.pdf"}]},
   {title:"Galleria dell’Accademia",date:"Sep 18",time:"8:30 AM",status:"Ready",details:"2 adult tickets · Order 23446732",map:"https://www.google.com/maps/search/?api=1&query=Galleria+dell%27Accademia+Florence",documents:[
     {label:"Open both tickets",file:"tickets/accademia-tickets.pdf"}]},
@@ -27,7 +27,7 @@ window.TICKET_WALLET = [
   {title:"Uffizi Gallery",date:"Sep 18",time:"2:45 PM",status:"Ready",details:"2 adult tickets · PNR 1FS9K1TF",map:"https://www.google.com/maps/search/?api=1&query=Uffizi+Gallery+Florence",documents:[
     {label:"Open both tickets",file:"tickets/uffizi-tickets.pdf"}]},
   {title:"Colosseum / Forum / Palatine",date:"Sep 21",time:"TBD",status:"To book",note:"Reservation has not been booked yet."},
-  {title:"Vatican Museums",date:"Sep 22",time:"9:00 AM",status:"Ready",details:"Guided tour in English · 2 adults · Arrive by 8:30 AM · Passageway 2 · Code 2L2N0MV03TTG95HOY",map:"https://www.google.com/maps/search/?api=1&query=Vatican+Museums+Entrance",documents:[
+  {title:"Vatican Museums",date:"Sep 22",time:"9:00 AM",status:"Ready",details:"Guided tour in English · 2 adults · Arrive by 8:30 AM · Passageway 2 · Code 2L2N0MV03TTG95HOY",map:"https://www.google.com/maps/search/?api=1&query=Vatican+Museums+Entrance",mapLabel:"Entrance",documents:[
     {label:"Open Vatican Museums voucher",file:"tickets/vatican-museums-voucher.pdf"}]},
   {title:"St. Peter’s Basilica + Dome Lift",date:"Sep 22",time:"1:30 PM",status:"Ready",details:"Dome 1:30 PM · Basilica 2:30 PM · VIOLET Lambertini entrance · 2 adults",map:"https://www.google.com/maps/search/?api=1&query=St+Peter%27s+Basilica",documents:[
     {label:"Entry QR codes & map",file:"tickets/st-peters-entry-qr-codes.pdf",primary:true},
@@ -36,7 +36,7 @@ window.TICKET_WALLET = [
   {title:"SNAV Naples ⇄ Capri Round Trip",date:"Sep 25",time:"8:05 AM outbound · 6:10 PM return",status:"Ready",details:"Outbound check-in 7:35 AM · Return check-in 5:40 PM · Booking PWIP2608020174",documents:[
     {label:"Open round-trip ferry ticket",file:"tickets/capri-ferry-roundtrip.pdf"}]}]},
  {group:"Tours", icon:"🍷", items:[
-  {title:"Tuscany Wine Tasting Experience",date:"Sep 19",time:"2:30 PM",status:"Ready",details:"Check-in 2:15 PM · Prestige Rent · Booking 1379678993",map:"https://www.google.com/maps/search/?api=1&query=Piazzale+Montelungo+Florence",documents:[
+  {title:"Tuscany Wine Tasting Experience",date:"Sep 19",time:"2:30 PM",status:"Ready",details:"Check-in 2:15 PM · Prestige Rent · Booking 1379678993",map:"https://www.google.com/maps/search/?api=1&query=Piazzale+Montelungo+Florence",mapLabel:"Meeting point",documents:[
     {label:"Open wine-tour voucher",file:"tickets/tuscany-wine-tour-voucher.pdf"}]},
   {title:"Capri Small-Group Boat Tour",date:"Sep 25",time:"2:00 PM",status:"Ticket needed",note:"Booked, but no voucher has been added yet."},
   {title:"Pompeii & Mount Vesuvius",date:"Sep 26",time:"8:00 AM",status:"Ready",details:"2 adult vouchers · Worldtours · Reference WOR-T140093602",documents:[

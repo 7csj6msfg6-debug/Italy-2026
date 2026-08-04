@@ -296,55 +296,85 @@ function renderTrip(){
   bindDayCards();
 }
 async function renderWallet(){
-  const allItems=wallet.flatMap(group=>group.items);
+  const allItems=wallet.flatMap(group=>group.items.map(item=>({...item,group:group.group,icon:group.icon})));
   const ready=allItems.filter(item=>item.status==="Ready").length;
+  const pending=allItems.filter(item=>item.status!=="Ready").length;
   const statusClass=status=>status==="Ready"?"ready":status==="To book"?"warn":"needed";
   let imported=[];
   try{imported=await getImportedTickets()}catch(error){console.error("Ticket database unavailable",error)}
-  const categories=["Flight","Train","Hotel","Attraction","Ferry","Tour","Other"];
+  const categories=["All","Flight","Train","Hotel","Attraction","Ferry","Tour","Other"];
   const icons={Flight:"✈️",Train:"🚆",Hotel:"🏨",Attraction:"🎟️",Ferry:"🚤",Tour:"🍷",Other:"📄"};
-  const importedGroups=categories.map(category=>({category,items:imported.filter(item=>item.category===category)})).filter(group=>group.items.length);
+  const groupCategory={Flights:"Flight",Trains:"Train",Hotels:"Hotel",Attractions:"Attraction",Ferries:"Ferry",Tours:"Tour"};
 
   qs("#wallet").innerHTML=`
-    <div class="section-title"><h2>Ticket wallet</h2><span class="small">${ready+imported.length} ready</span></div>
-    <button class="wallet-add-button" id="openTicketImporter"><span>＋</span><div><strong>Add a ticket</strong><small>Choose a PDF or image from Files</small></div></button>
-    <div class="wallet-summary">
-      <div><strong>${ready}</strong><span>Built-in documents</span></div>
-      <div><strong>${imported.length}</strong><span>Added on this iPhone</span></div>
-      <div><strong>${allItems.filter(x=>x.status==="To book").length}</strong><span>Still to book</span></div>
+    <div class="wallet-hero">
+      <div>
+        <div class="focus-label">TRAVEL DOCUMENTS</div>
+        <h2>Wallet</h2>
+        <p>Tickets, vouchers and confirmations in one place.</p>
+      </div>
+      <div class="wallet-ready-ring"><strong>${ready+imported.length}</strong><span>ready</span></div>
     </div>
-    <div class="callout">Tickets you add here are stored offline only on this device. They are not uploaded to GitHub or sent anywhere. Clearing Safari website data can remove them.</div>
 
-    ${importedGroups.length?`<section class="wallet-group imported-wallet-group">
-      <h3>📱 Added on this device</h3>
-      ${importedGroups.map(group=>`<div class="imported-category"><div class="imported-category-title">${icons[group.category]} ${group.category}s</div>${group.items.map(item=>`
-        <article class="wallet-item wallet-document-card imported-ticket-card">
-          <div class="wallet-top"><div><div class="wallet-title">${escapeHTML(item.name)}</div><div class="small">${escapeHTML(item.date||"No date")} ${item.time?`· ${escapeHTML(item.time)}`:""}</div></div><span class="wallet-status ready">Saved offline</span></div>
-          ${item.notes?`<div class="wallet-note">${escapeHTML(item.notes)}</div>`:""}
-          <div class="small imported-file-name">${escapeHTML(item.fileName)} · ${formatFileSize(item.size)}</div>
-          <div class="wallet-actions"><button class="primary wallet-file-button" data-open-imported="${item.id}">📄 Open ticket</button><button class="secondary wallet-file-button danger-text" data-delete-imported="${item.id}">Delete</button></div>
-        </article>`).join("")}</div>`).join("")}
-    </section>`:""}
+    <div class="wallet-actions-top">
+      <button class="wallet-add-button" id="openTicketImporter"><span>＋</span><div><strong>Add from iPhone</strong><small>PDF or image from Files</small></div></button>
+    </div>
 
-    ${wallet.map(group=>`<section class="wallet-group">
-      <h3>${group.icon} ${group.group}</h3>
-      ${group.items.map(item=>`<article class="wallet-item wallet-document-card">
-        <div class="wallet-top"><div><div class="wallet-title">${item.title}</div><div class="small">${item.date} · ${item.time}</div></div><span class="wallet-status ${statusClass(item.status)}">${item.status}</span></div>
-        ${item.details?`<div class="wallet-details">${item.details}</div>`:""}
-        ${item.note?`<div class="wallet-note">${item.note}</div>`:""}
-        <div class="wallet-actions">
-          ${(item.documents||[]).map(doc=>`<a class="${doc.primary?"primary":"secondary"} wallet-file-button" href="${doc.file}" target="_blank" rel="noopener">📄 ${doc.label}</a>`).join("")}
-          ${item.map?`<a class="secondary wallet-file-button" href="${item.map}" target="_blank" rel="noopener">📍 Open Maps</a>`:""}
-          ${!(item.documents||[]).length?`<button class="secondary wallet-file-button" disabled>No document added yet</button>`:""}
-        </div>
-      </article>`).join("")}
-    </section>`).join("")}
+    <div class="wallet-summary polished">
+      <div><strong>${ready}</strong><span>Embedded</span></div>
+      <div><strong>${imported.length}</strong><span>On this iPhone</span></div>
+      <div><strong>${pending}</strong><span>Still needed</span></div>
+    </div>
+
+    <div class="wallet-privacy-note"><span>🔒</span><div><strong>Private imports stay on this iPhone</strong><small>Embedded documents in the tickets folder remain part of the published site.</small></div></div>
+
+    <div class="wallet-tools">
+      <label class="wallet-search"><span>⌕</span><input id="walletSearch" type="search" placeholder="Search tickets"></label>
+      <div class="wallet-filter-row">${categories.map((c,i)=>`<button class="wallet-filter ${i===0?"active":""}" data-wallet-filter="${c}">${c}</button>`).join("")}</div>
+    </div>
+
+    <div id="walletContent">
+      ${imported.length?`<section class="wallet-group imported-wallet-group" data-wallet-category="Imported">
+        <div class="wallet-group-heading"><div><span class="wallet-group-icon">📱</span><div><h3>Added on this iPhone</h3><small>${imported.length} saved offline</small></div></div></div>
+        ${imported.map(item=>`
+          <article class="wallet-item wallet-document-card imported-ticket-card" data-wallet-item data-category="${escapeHTML(item.category)}" data-search="${escapeHTML((item.name+' '+item.category+' '+(item.notes||'')).toLowerCase())}">
+            <div class="wallet-card-main">
+              <div class="wallet-card-icon">${icons[item.category]||"📄"}</div>
+              <div class="wallet-card-copy"><div class="wallet-title">${escapeHTML(item.name)}</div><div class="wallet-meta">${escapeHTML(item.date||"No date")}${item.time?` · ${escapeHTML(item.time)}`:""}</div></div>
+              <span class="wallet-status ready">Offline</span>
+            </div>
+            ${item.notes?`<div class="wallet-note">${escapeHTML(item.notes)}</div>`:""}
+            <div class="wallet-file-meta">${escapeHTML(item.fileName)} · ${formatFileSize(item.size)}</div>
+            <div class="wallet-actions"><button class="primary wallet-file-button" data-open-imported="${item.id}">Open ticket</button><button class="secondary wallet-file-button danger-text" data-delete-imported="${item.id}">Delete</button></div>
+          </article>`).join("")}
+      </section>`:""}
+
+      ${wallet.map(group=>`<section class="wallet-group" data-wallet-category="${groupCategory[group.group]||group.group}">
+        <div class="wallet-group-heading"><div><span class="wallet-group-icon">${group.icon}</span><div><h3>${group.group}</h3><small>${group.items.filter(x=>x.status==="Ready").length} of ${group.items.length} ready</small></div></div></div>
+        ${group.items.map(item=>`<article class="wallet-item wallet-document-card" data-wallet-item data-category="${groupCategory[group.group]||group.group}" data-search="${escapeHTML((item.title+' '+item.date+' '+item.time+' '+(item.details||'')+' '+(item.note||'')).toLowerCase())}">
+          <div class="wallet-card-main">
+            <div class="wallet-card-icon">${group.icon}</div>
+            <div class="wallet-card-copy"><div class="wallet-title">${item.title}</div><div class="wallet-meta">${item.date} · ${item.time}</div></div>
+            <span class="wallet-status ${statusClass(item.status)}">${item.status==="Ready"?"Ready":item.status}</span>
+          </div>
+          ${item.details?`<div class="wallet-details">${item.details}</div>`:""}
+          ${item.note?`<div class="wallet-note">${item.note}</div>`:""}
+          ${(item.documents||[]).length?`<div class="wallet-document-count">${item.documents.length} document${item.documents.length===1?"":"s"} available</div>`:""}
+          <div class="wallet-actions">
+            ${(item.documents||[]).map((doc,index)=>`<a class="${doc.primary||index===0?"primary":"secondary"} wallet-file-button" href="${doc.file}" target="_blank" rel="noopener">${doc.label}</a>`).join("")}
+            ${item.map?`<a class="secondary wallet-file-button" href="${item.map}" target="_blank" rel="noopener">${item.mapLabel||"Open Maps"}</a>`:""}
+            ${!(item.documents||[]).length?`<button class="secondary wallet-file-button" disabled>Document not added</button>`:""}
+          </div>
+        </article>`).join("")}
+      </section>`).join("")}
+      <div class="wallet-empty hidden" id="walletEmpty">No tickets match this search.</div>
+    </div>
 
     <div class="ticket-import-overlay hidden" id="ticketImportOverlay">
       <div class="ticket-import-sheet" role="dialog" aria-modal="true" aria-labelledby="ticketImportTitle">
-        <div class="ticket-import-head"><div><div class="focus-label">OFFLINE WALLET</div><h2 id="ticketImportTitle">Add ticket</h2></div><button class="ticket-close" id="closeTicketImporter" aria-label="Close">×</button></div>
+        <div class="ticket-import-head"><div><div class="focus-label">PRIVATE OFFLINE WALLET</div><h2 id="ticketImportTitle">Add ticket</h2></div><button class="ticket-close" id="closeTicketImporter" aria-label="Close">×</button></div>
         <label class="ticket-field"><span>PDF or image</span><input id="ticketFile" type="file" accept="application/pdf,image/*"></label>
-        <label class="ticket-field"><span>Category</span><select id="ticketCategory">${categories.map(c=>`<option value="${c}">${c}</option>`).join("")}</select></label>
+        <label class="ticket-field"><span>Category</span><select id="ticketCategory">${categories.slice(1).map(c=>`<option value="${c}">${c}</option>`).join("")}</select></label>
         <label class="ticket-field"><span>Ticket name</span><input id="ticketName" placeholder="Vatican Museums"></label>
         <div class="ticket-field-grid"><label class="ticket-field"><span>Date</span><input id="ticketDate" type="date"></label><label class="ticket-field"><span>Time</span><input id="ticketTime" type="time"></label></div>
         <label class="ticket-field"><span>Notes (optional)</span><textarea id="ticketNotes" placeholder="Confirmation number, entrance, seat, meeting point..."></textarea></label>
@@ -353,13 +383,36 @@ async function renderWallet(){
       </div>
     </div>`;
 
+  let activeFilter="All";
+  const applyWalletFilters=()=>{
+    const query=(qs("#walletSearch").value||"").trim().toLowerCase();
+    let visible=0;
+    qsa("[data-wallet-item]").forEach(card=>{
+      const category=card.dataset.category;
+      const matchFilter=activeFilter==="All"||category===activeFilter;
+      const matchSearch=!query||card.dataset.search.includes(query);
+      card.classList.toggle("hidden",!(matchFilter&&matchSearch));
+      if(matchFilter&&matchSearch)visible++;
+    });
+    qsa("#walletContent .wallet-group").forEach(group=>{
+      const cards=[...group.querySelectorAll("[data-wallet-item]")];
+      group.classList.toggle("hidden",cards.length>0&&!cards.some(card=>!card.classList.contains("hidden")));
+    });
+    qs("#walletEmpty").classList.toggle("hidden",visible!==0);
+  };
+  qs("#walletSearch").addEventListener("input",applyWalletFilters);
+  qsa("[data-wallet-filter]").forEach(button=>button.addEventListener("click",()=>{
+    qsa("[data-wallet-filter]").forEach(x=>x.classList.remove("active"));
+    button.classList.add("active");activeFilter=button.dataset.walletFilter;applyWalletFilters();
+  }));
+
   const overlay=qs("#ticketImportOverlay");
   qs("#openTicketImporter").addEventListener("click",()=>overlay.classList.remove("hidden"));
   qs("#closeTicketImporter").addEventListener("click",()=>overlay.classList.add("hidden"));
   overlay.addEventListener("click",event=>{if(event.target===overlay)overlay.classList.add("hidden")});
   qs("#ticketFile").addEventListener("change",event=>{
     const file=event.target.files[0];
-    if(file&&!qs("#ticketName").value)qs("#ticketName").value=file.name.replace(/\.[^.]+$/,"").replace(/[-_]+/g," ");
+    if(file&&!qs("#ticketName").value)qs("#ticketName").value=file.name.replace(/\.[^.]+$/," ").replace(/[-_]+/g," ").trim();
   });
   qs("#saveImportedTicket").addEventListener("click",async()=>{
     const file=qs("#ticketFile").files[0],name=qs("#ticketName").value.trim(),message=qs("#ticketImportMessage"),button=qs("#saveImportedTicket");
