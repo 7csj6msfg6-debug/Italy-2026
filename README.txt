@@ -1,6 +1,17 @@
-ITALY TRIP 2026 — VERSION 5
+ITALY TRIP 2026 — DESIGN UPDATE
 
-Upload all files to the root of the same GitHub repository and replace existing files.
+Upload every file in this folder to the root of your existing GitHub repository and replace the old files.
 
-New: travel dashboard, ticket wallet, city guide placeholders, expense tracker, and reorganized navigation.
-Future itinerary-only updates still use trip-data.js.
+Main improvements:
+- New iPhone-style visual design
+- Correct five-tab navigation
+- Redesigned Home dashboard
+- Cleaner day timelines
+- Improved Ticket Wallet, City Guide, More, Bookings, Packing and Notes screens
+- Existing itinerary, checkmarks, notes and expenses remain compatible
+
+After committing:
+1. Open the GitHub Pages link in Safari.
+2. Refresh it.
+3. Close the Home Screen app completely.
+4. Reopen it.
