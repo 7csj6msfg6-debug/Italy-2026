@@ -61,6 +61,7 @@ function dayCard(day,open=false){
       <div class="chevron">⌄</div>
     </button>
     <div class="day-content">
+      <div class="route-launch"><button class="primary" data-route-date="${day.date}">Start Route Mode</button></div>
       <div class="timeline">
         ${day.events.map((event,index)=>{
           const key=eventId(day,event,index),done=isDone(key);
@@ -87,6 +88,84 @@ function bindDayCards(){
     row.classList.toggle("done",box.checked);
     renderHome();
   }));
+  qsa("[data-route-date]").forEach(btn=>btn.addEventListener("click",()=>openRouteMode(btn.dataset.routeDate)));
+}
+
+
+let activeRouteDate = todayISO();
+
+function routeCurrentIndex(day){
+  const firstUndone=day.events.findIndex((event,index)=>!isDone(eventId(day,event,index)));
+  return firstUndone===-1?day.events.length:firstUndone;
+}
+function openRouteMode(date){
+  activeRouteDate=date||todayISO();
+  renderRouteMode();
+  showView("route",false);
+}
+function renderRouteMode(){
+  let day=trip.find(d=>d.date===activeRouteDate)||trip[0];
+  activeRouteDate=day.date;
+  const currentIndex=routeCurrentIndex(day);
+  const current=currentIndex<day.events.length?day.events[currentIndex]:null;
+  const complete=day.events.filter((e,i)=>isDone(eventId(day,e,i))).length;
+  const pct=Math.round(complete/day.events.length*100);
+
+  qs("#route").innerHTML=`
+    <div class="route-screen-head">
+      <div><div class="eyebrow">ROUTE MODE</div><h2 style="margin:4px 0 0">${day.city}</h2></div>
+      <button class="route-back" id="closeRoute">Done</button>
+    </div>
+    <div class="route-select-wrap">
+      <label for="routeDaySelect">Choose a day</label>
+      <select id="routeDaySelect" class="route-select">
+        ${trip.map(d=>`<option value="${d.date}" ${d.date===day.date?"selected":""}>${shortDate(d.date)} — ${d.city}: ${d.title}</option>`).join("")}
+      </select>
+    </div>
+    ${current?`
+      <section class="route-current">
+        <div class="focus-label">CURRENT STOP · ${currentIndex+1} OF ${day.events.length}</div>
+        <div class="route-current-title">${current.title}</div>
+        <div class="route-current-time">${current.time}</div>
+        <div class="route-current-note">${current.note}</div>
+        ${current.status?`<span class="badge ${badgeClass(current.status)}">${current.status}</span>`:""}
+        <div class="route-actions">
+          ${current.map?`<a class="primary" href="${current.map}" target="_blank" rel="noopener">Open Maps</a>`:`<button class="secondary" disabled>No map for this stop</button>`}
+          <button class="secondary" id="completeCurrent">Mark complete</button>
+        </div>
+      </section>`:
+      `<div class="route-complete-banner"><strong>Day complete ✓</strong><div class="small">Every stop for this day is marked complete.</div></div>`}
+    <div class="info-card">
+      <strong>Day progress</strong>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="small">${complete} of ${day.events.length} stops completed</div>
+    </div>
+    <h3>Today’s route</h3>
+    <div class="route-step-list">
+      ${day.events.map((event,index)=>{
+        const done=isDone(eventId(day,event,index));
+        const active=index===currentIndex;
+        return `<div class="route-step ${done?"complete":""} ${active?"active":""}">
+          <div class="route-step-marker">${done?"✓":index+1}</div>
+          <div class="route-step-card">
+            <div class="route-step-title">${event.title}</div>
+            <div class="route-step-meta">${event.time}${event.status?` · ${event.status}`:""}</div>
+            ${active?`<div class="small" style="margin-top:5px">Up next</div>`:""}
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
+
+  qs("#closeRoute").addEventListener("click",()=>showView("trip"));
+  qs("#routeDaySelect").addEventListener("change",e=>{activeRouteDate=e.target.value;renderRouteMode()});
+  if(current){
+    qs("#completeCurrent").addEventListener("click",()=>{
+      setDone(eventId(day,current,currentIndex),true);
+      renderRouteMode();
+      renderTrip();
+      renderHome();
+    });
+  }
 }
 
 function renderHome(){
@@ -123,6 +202,7 @@ function renderHome(){
         <div class="small">${next.event.note}</div>
         <div class="button-row">
           ${next.event.map?`<a class="primary" href="${next.event.map}" target="_blank">Open Maps</a>`:""}
+          <button class="secondary" data-home-route="${day.date}">Start Route Mode</button>
           <button class="secondary" data-jump="trip">View full day</button>
         </div>
       </div>
@@ -152,6 +232,7 @@ function renderHome(){
       <button class="menu-card" data-jump="guide"><div><strong>City guide</strong><span>Food ideas and expense tracking</span></div><div>›</div></button>
     </div>`;
   bindInternalNavigation();
+  qsa("[data-home-route]").forEach(btn=>btn.addEventListener("click",()=>openRouteMode(btn.dataset.homeRoute)));
 }
 function renderTrip(){
   const cities=["All","Flights","Venice","Florence","Rome","Naples","Capri"];
@@ -293,6 +374,7 @@ function bindInternalNavigation(){
 qsa(".tab").forEach(btn=>btn.addEventListener("click",()=>showView(btn.dataset.target)));
 
 renderHome();
+renderRouteMode();
 renderTrip();
 renderWallet();
 renderGuide();
