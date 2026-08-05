@@ -31,7 +31,15 @@ window.TICKET_WALLET = [
 window.CITY_GUIDE = {
  Venice:[{type:"Coffee",name:"Add a favorite café",note:"Use this section for a breakfast stop near Rio Hotel."},{type:"Dinner",name:"Add a dinner choice",note:"Ideal near St. Mark’s or Rialto."}],
  Florence:[{type:"Lunch",name:"Add a quick lunch near the Duomo",note:"Especially useful between the Dome and Uffizi."},{type:"Gelato",name:"Add your favorite gelato stop",note:"Good for the evening Ponte Vecchio walk."}],
- Rome:[{type:"Lunch",name:"Add a Monti lunch",note:"For the Colosseum day."},{type:"Dinner",name:"Add a Trastevere dinner",note:"For September 22."}],
+ Rome:[
+{type:"Sep 20 Lunch",name:"Armando al Pantheon ⭐⭐⭐⭐⭐",note:"Official Pick · Carbonara · Cacio e Pepe · House wine · Reservation recommended."},
+{type:"Sep 21 Lunch",name:"Ai Tre Scalini ⭐⭐⭐⭐⭐",note:"Official Pick · Monti district · Carbonara · Cacio e Pepe."},
+{type:"Sep 22 Lunch",name:"Pastasciutta Vaticano ⭐⭐⭐⭐⭐",note:"Official Pick · Fast pasta near the Vatican."},
+{type:"Sep 22 Dinner",name:"Tonnarello ⭐⭐⭐⭐⭐",note:"Official Pick · Trastevere · Carbonara · Tiramisu."},
+{type:"Sep 23 Dinner",name:"Da Enzo al 29 ⭐⭐⭐⭐⭐",note:"Official Pick · Final Roman dinner."},
+{type:"Top 5",name:"If You Only Do Five Food Things",note:"Armando al Pantheon · Tonnarello · Supplizio · Giolitti · Roscioli."},
+{type:"Skip List",name:"Avoid tourist traps",note:"Avoid tourist menus near Pantheon/Trevi and long waits over 45 min at Tonnarello or Da Enzo."}
+],
  Naples:[{type:"Pizza",name:"Add your Naples pizza pick",note:"For arrival day."},{type:"Final dinner",name:"Add your final-night restaurant",note:"For September 26."}],
  Capri:[{type:"Lunch",name:"Add a quick Capri lunch",note:"Must fit before 1:45 PM boat-tour check-in."},{type:"Gelato",name:"Add a Marina Grande option",note:"For after the boat tour."}]
 };
