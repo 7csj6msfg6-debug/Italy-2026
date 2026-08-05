@@ -678,3 +678,19 @@ textarea{min-height:140px;resize:vertical}
   .readiness-item-top{flex-wrap:wrap}
   .readiness-status{margin-left:45px}
 }
+
+
+/* Today → Wallet deep-link target */
+.wallet-target-highlight{
+  animation:walletTargetPulse 2.35s ease-out;
+  outline:3px solid rgba(47,112,88,.42);
+  outline-offset:3px;
+}
+@keyframes walletTargetPulse{
+  0%{transform:scale(.985);background:rgba(220,239,229,.95)}
+  28%{transform:scale(1.008);background:rgba(232,244,237,.92)}
+  100%{transform:scale(1);background:var(--surface)}
+}
+@media(prefers-reduced-motion:reduce){
+  .wallet-target-highlight{animation:none}
+}

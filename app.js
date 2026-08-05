@@ -405,6 +405,87 @@ async function renderTodayWeather(day,force=false){
   }
 }
 
+
+let pendingWalletTarget="";
+function walletComparableText(value){
+  return (value||"")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/’/g,"'")
+    .replace(/\bamerican airlines\b/g,"aa")
+    .replace(/\bst[.]? peter'?s\b/g,"st peter")
+    .replace(/\bsaint peter'?s\b/g,"st peter")
+    .replace(/\bgalleria dell'?accademia\b/g,"accademia")
+    .replace(/\bbrunelleschi'?s dome climb\b/g,"brunelleschi dome")
+    .replace(/\bsistine chapel\b/g,"")
+    .replace(/\bsmall[- ]group\b/g,"")
+    .replace(/[^a-z0-9]+/g," ")
+    .trim();
+}
+function walletEventAlias(title){
+  const text=walletComparableText(title);
+  if(/wine tour check in|wine tasting/.test(text))return "tuscany wine tasting experience";
+  if(/boat tour check in|boat tour/.test(text))return "capri boat tour";
+  if(/snav|ferry to capri|return ferry|return to naples/.test(text))return "snav naples capri round trip";
+  if(/pompeii|vesuvius/.test(text))return "pompeii mount vesuvius";
+  if(/vatican museum/.test(text))return "vatican museums";
+  if(/st peter/.test(text))return "st peter basilica dome lift";
+  if(/st mark|doge/.test(text))return "st marks basilica doges palace";
+  if(/colosseum|roman forum|palatine/.test(text))return "colosseum forum palatine";
+  if(/pisa/.test(text)&&/train/.test(text))return "florence pisa";
+  return text;
+}
+function walletDateLabel(isoDate){
+  const d=new Date(`${isoDate}T12:00:00`);
+  return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric"}).format(d);
+}
+function findWalletMatchForEvent(day,event){
+  const alias=walletEventAlias(event.title);
+  const eventTokens=new Set(alias.split(" ").filter(word=>word.length>1));
+  const targetDate=walletDateLabel(day.date).toLowerCase();
+  let best=null;
+  wallet.forEach(group=>group.items.forEach(item=>{
+    const itemText=walletComparableText(item.title);
+    const itemTokens=new Set(itemText.split(" ").filter(word=>word.length>1));
+    let overlap=0;
+    eventTokens.forEach(token=>{if(itemTokens.has(token))overlap++});
+    const exactAlias=itemText===walletComparableText(alias);
+    const dateMatch=(item.date||"").toLowerCase()===targetDate;
+    const timeMatch=event.time&&item.time&&walletComparableText(item.time).includes(walletComparableText(event.time));
+    let score=overlap*4+(dateMatch?12:0)+(timeMatch?4:0)+(exactAlias?20:0);
+    if(alias.includes(itemText)||itemText.includes(alias))score+=10;
+    if(!best||score>best.score)best={score,key:walletItemKey(group.group,item),item};
+  }));
+  return best&&best.score>=14?best:null;
+}
+function focusWalletCard(key){
+  if(!key)return false;
+  const card=document.querySelector(`[data-wallet-key="${CSS.escape(key)}"]`);
+  if(!card)return false;
+  const search=qs("#walletSearch");
+  if(search&&search.value){search.value="";search.dispatchEvent(new Event("input"))}
+  qsa("[data-wallet-filter]").forEach(button=>button.classList.toggle("active",button.dataset.walletFilter==="All"));
+  qsa("#walletContent .wallet-group,[data-wallet-item]").forEach(el=>el.classList.remove("hidden"));
+  card.scrollIntoView({behavior:"smooth",block:"center"});
+  card.classList.remove("wallet-target-highlight");
+  void card.offsetWidth;
+  card.classList.add("wallet-target-highlight");
+  setTimeout(()=>card.classList.remove("wallet-target-highlight"),2400);
+  return true;
+}
+async function openWalletForEvent(day,event){
+  const match=findWalletMatchForEvent(day,event);
+  pendingWalletTarget=match?match.key:"";
+  showView("wallet");
+  await new Promise(resolve=>setTimeout(resolve,80));
+  if(pendingWalletTarget&&!focusWalletCard(pendingWalletTarget)){
+    await renderWallet();
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    focusWalletCard(pendingWalletTarget);
+  }
+  pendingWalletTarget="";
+}
+
 function renderHome(selectedDate){
   const actual=todayISO();
   const date=selectedDate||getTodayScreenDate();
@@ -420,6 +501,7 @@ function renderHome(selectedDate){
   const label=duringTrip&&isActual?"TODAY":duringTrip?"TRIP DAY PREVIEW":"PREVIEW YOUR TRIP DAY";
   const nextIndex=next?next.index:-1;
   const countdown=tripCountdown();
+  const nextWalletMatch=next?findWalletMatchForEvent(day,next.event):null;
 
   qs("#home").innerHTML=`
     <section class="today-date-strip">
@@ -456,7 +538,7 @@ function renderHome(selectedDate){
       <div class="today-primary-actions">
         ${next.event.map?`<a class="primary" href="${next.event.map}" target="_blank" rel="noopener">Open Maps</a>`:""}
         <button class="secondary" data-home-route="${day.date}">Route Mode</button>
-        <button class="secondary" data-jump="wallet">Wallet</button>
+        <button class="secondary" data-home-wallet="${nextIndex}">${nextWalletMatch?"Open ticket":"Open Wallet"}</button>
       </div>
     </section>`:`<div class="route-complete-banner"><strong>Day complete ✓</strong><div class="small">Every stop for this day is marked complete.</div></div>`}
 
@@ -497,6 +579,11 @@ function renderHome(selectedDate){
   qs("#todayPrev").addEventListener("click",()=>{if(dayIndex>0)renderHome(trip[dayIndex-1].date)});
   qs("#todayNext").addEventListener("click",()=>{if(dayIndex<trip.length-1)renderHome(trip[dayIndex+1].date)});
   qsa("[data-home-route]").forEach(btn=>btn.addEventListener("click",()=>openRouteMode(btn.dataset.homeRoute)));
+  qsa("[data-home-wallet]").forEach(btn=>btn.addEventListener("click",()=>{
+    const index=Number(btn.dataset.homeWallet);
+    const event=day.events[index];
+    if(event)openWalletForEvent(day,event);else showView("wallet");
+  }));
   qsa("[data-today-check]").forEach(btn=>btn.addEventListener("click",()=>{
     const key=btn.dataset.todayCheck;
     setDone(key,!isDone(key));
@@ -605,7 +692,7 @@ async function renderWallet(){
 
       ${wallet.map(group=>`<section class="wallet-group" data-wallet-category="${groupCategory[group.group]||group.group}">
         <div class="wallet-group-heading"><div><span class="wallet-group-icon">${group.icon}</span><div><h3>${group.group}</h3><small>${group.items.filter(x=>x.status==="Ready").length} of ${group.items.length} ready</small></div></div></div>
-        ${group.items.map(item=>`<article class="wallet-item wallet-document-card" data-wallet-item data-category="${groupCategory[group.group]||group.group}" data-search="${escapeHTML((item.title+' '+item.date+' '+item.time+' '+(item.details||'')+' '+(item.note||'')).toLowerCase())}">
+        ${group.items.map(item=>`<article class="wallet-item wallet-document-card" data-wallet-item data-wallet-key="${walletItemKey(group.group,item)}" data-category="${groupCategory[group.group]||group.group}" data-search="${escapeHTML((item.title+' '+item.date+' '+item.time+' '+(item.details||'')+' '+(item.note||'')).toLowerCase())}">
           <div class="wallet-card-main">
             <div class="wallet-card-icon">${group.icon}</div>
             <div class="wallet-card-copy"><div class="wallet-title">${item.title}</div><div class="wallet-meta">${item.date} · ${item.time}</div></div>
@@ -736,6 +823,7 @@ async function renderWallet(){
     await deleteImportedTicket(button.dataset.deleteImported);
     await renderWallet();
   }));
+  if(pendingWalletTarget)requestAnimationFrame(()=>focusWalletCard(pendingWalletTarget));
 }
 function escapeHTML(value){return String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));}
 function formatFileSize(bytes){if(bytes<1024)return `${bytes} B`;if(bytes<1024*1024)return `${(bytes/1024).toFixed(1)} KB`;return `${(bytes/1024/1024).toFixed(1)} MB`;}
