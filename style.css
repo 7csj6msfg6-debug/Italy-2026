@@ -710,3 +710,19 @@ textarea{min-height:140px;resize:vertical}
 .curated-top-pick{border-color:rgba(173,130,20,.35);background:linear-gradient(180deg,rgba(255,249,226,.7),var(--surface))}.food-place-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.food-place-meta span{padding:5px 7px;border-radius:999px;background:rgba(232,240,235,.65);font-size:11px}.food-why{margin-top:11px;padding:10px;border-radius:12px;background:rgba(255,241,191,.42)}.food-why strong{font-size:12px}.food-why p{margin:4px 0 0!important}.food-dishes{margin-top:10px}.food-dishes>strong{font-size:12px}.food-dishes>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.food-dishes span{padding:6px 8px;border-radius:10px;background:rgba(232,240,235,.55);font-size:12px}
 .food-passport{margin-top:16px;padding:15px;border:1px solid rgba(20,63,49,.12);border-radius:19px;background:var(--surface)}.food-passport-head{display:flex;gap:10px;align-items:center;margin-bottom:9px}.food-passport-head>span{font-size:25px}.food-passport-head h3{margin:0}.food-passport-head small{color:var(--muted)}.food-passport-item{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid rgba(20,63,49,.09)}.food-passport-item input{width:19px;height:19px}.food-passport-item:has(input:checked) span{text-decoration:line-through;color:var(--muted)}
 @media(max-width:390px){.today-food-top{flex-direction:column}.today-food-top>a{width:100%;text-align:center}.today-food-alts a{align-items:flex-start;flex-direction:column;gap:2px}}
+
+/* Day-by-day Venice and Florence Food Companion */
+.food-day-list{display:grid;gap:18px}
+.food-day-section{background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:12px}
+.food-day-heading{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 12px}
+.food-day-heading>div{display:flex;align-items:center;gap:11px}.food-day-heading>div>span{font-size:23px}
+.food-day-heading small{display:block;color:var(--accent);font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+.food-day-heading h3{margin:2px 0 0;font-size:19px}
+.food-day-section .food-category-section{background:var(--surface);margin-bottom:9px}
+.food-day-section .food-category-section:last-child{margin-bottom:0}
+.food-companion-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;margin-top:16px}
+.food-companion-box h3{margin:0 0 11px;font-size:17px}
+.food-companion-box>div{padding:8px 0;border-top:1px solid var(--border);line-height:1.4}
+.food-companion-box>div:first-of-type{border-top:0}
+.food-companion-box.skip{background:var(--surface-2)}
+.food-passport-item span b{color:var(--accent);margin-right:3px}
