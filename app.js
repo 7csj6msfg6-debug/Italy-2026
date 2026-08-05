@@ -978,13 +978,154 @@ function renderGuide(){
   qs('#clearExpenses').addEventListener('click',()=>{const items=guideLoad('expenses',[]);if(!items.length)return;if(confirm('Delete every logged expense?')){guideSave('expenses',[]);loadExpenses()}});
   loadExpenses();
 }
-function renderBookings(){
+async function renderBookings(){
+  let imported=[];
+  try{imported=await getImportedTickets()}catch(error){console.error("Ticket database unavailable",error)}
+  const linked={};
+  imported.filter(item=>item.linkedWalletKey).forEach(item=>(linked[item.linkedWalletKey]||=[]).push(item));
+
+  const hotelMaps={
+    Venice:"https://www.google.com/maps/search/?api=1&query=Rio+Hotel+Venice",
+    Florence:"https://www.google.com/maps/search/?api=1&query=B%26B+A+Florence+View",
+    Rome:"https://www.google.com/maps/search/?api=1&query=Temple+View+GuestHouse+Rome",
+    Naples:"https://www.google.com/maps/search/?api=1&query=Napolinn+B%26B+Naples"
+  };
+
+  const groupCategory={Flights:"Transportation",Trains:"Transportation",Ferries:"Transportation",Attractions:"Attractions & tours",Tours:"Attractions & tours"};
+  const allReservations=wallet.flatMap(group=>group.items.map(item=>{
+    const files=linked[walletItemKey(group.group,item)]||[];
+    const isToBook=item.status==="To book";
+    const isPending=item.status==="Ticket needed";
+    return {
+      ...item,
+      group:group.group,
+      icon:group.icon,
+      category:groupCategory[group.group]||group.group,
+      files,
+      state:isToBook?"to-book":isPending?"pending":files.length?"ready":"booked"
+    };
+  }));
+
+  const hotelsReady=hotels.length;
+  const ready=allReservations.filter(x=>x.state==="ready").length;
+  const booked=allReservations.filter(x=>x.state==="booked").length;
+  const pending=allReservations.filter(x=>x.state==="pending").length;
+  const toBook=allReservations.filter(x=>x.state==="to-book").length;
+  const total=hotelsReady+allReservations.length;
+  const complete=hotelsReady+ready+booked+pending;
+  const progress=Math.round((complete/Math.max(total,1))*100);
+
+  const attention=[
+    ...allReservations.filter(x=>x.state==="to-book"),
+    ...remaining.filter(r=>!allReservations.some(x=>x.title.toLowerCase().includes(r[0].split(" / ")[0].toLowerCase()))).map(r=>({
+      title:r[0],date:"",time:"",note:r[1],state:"to-book",icon:"○",group:"Other",files:[]
+    }))
+  ];
+
+  const statusInfo=item=>{
+    if(item.state==="ready")return {label:"Ready",className:"ready",sub:"Booked and private ticket attached"};
+    if(item.state==="booked")return {label:"Booked",className:"booked",sub:"Confirmed; no private file attached"};
+    if(item.state==="pending")return {label:"Pending",className:"pending",sub:item.group==="Flights"?"Boarding pass becomes available closer to departure":"Booked; document still expected"};
+    return {label:"To book",className:"warn",sub:item.note||"Reservation still needed"};
+  };
+
+  const reservationCard=item=>{
+    const status=statusInfo(item);
+    return `<article class="readiness-item">
+      <div class="readiness-item-top">
+        <div class="readiness-icon">${item.icon||"•"}</div>
+        <div class="readiness-copy">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span>${[item.date,item.time].filter(Boolean).map(escapeHTML).join(" · ")}</span>
+        </div>
+        <span class="readiness-status ${status.className}">${status.label}</span>
+      </div>
+      <div class="readiness-explanation">${escapeHTML(status.sub)}</div>
+      ${item.details?`<div class="readiness-detail">${escapeHTML(item.details)}</div>`:""}
+      <div class="readiness-actions">
+        ${item.files?.length?`<button class="primary" data-open-imported="${item.files[0].id}">Open ticket</button>`:`<button class="secondary" data-open="wallet">${item.state==="to-book"?"Open Wallet":"Attach ticket"}</button>`}
+        ${item.map?`<a class="secondary" href="${item.map}" target="_blank" rel="noopener">${item.mapLabel||"Maps"}</a>`:""}
+      </div>
+    </article>`;
+  };
+
+  const transport=allReservations.filter(x=>x.category==="Transportation");
+  const attractions=allReservations.filter(x=>x.category==="Attractions & tours");
+  const flexible=[
+    ["Venice walks and vaporetto","Flexible sightseeing","Venice"],
+    ["Historic Florence walking route","No timed reservation required","Florence"],
+    ["Rome piazzas and fountains","Flexible sightseeing","Rome"],
+    ["Historic Naples walking route","No timed reservation required","Naples"],
+    ["Capri Town and Anacapri exploration","Flexible around booked transport and boat tour","Capri"]
+  ];
+
   qs("#bookings").innerHTML=`
-    <div class="section-title"><h2>Bookings</h2><button data-back="more">Done</button></div>
-    <h3>Hotels</h3>
-    <div class="info-grid">${hotels.map(h=>`<div class="info-card"><strong>${h[0]} · ${h[1]}</strong><div class="small">${h[3]}${h[2]?`<br>${h[2]}`:""}</div></div>`).join("")}</div>
-    <h3>Remaining reservations</h3>
-    <div class="info-card">${remaining.map(r=>`<div class="status-row"><div><strong>${r[0]}</strong><div class="small">${r[1]}</div></div><span class="badge warn">To book</span></div>`).join("")}</div>`;
+    <div class="section-title"><div><button class="back-link" data-back="more">‹ More</button><h2>Trip readiness</h2></div><span class="small">${progress}% prepared</span></div>
+
+    <section class="readiness-hero">
+      <div>
+        <div class="focus-label">BOOKING OVERVIEW</div>
+        <h2>${attention.length?`${attention.length} item${attention.length===1?"":"s"} need attention`:"Everything important is booked"}</h2>
+        <p>A complete view of accommodations, transportation, timed reservations and flexible plans.</p>
+      </div>
+      <div class="readiness-ring"><strong>${progress}%</strong><span>ready</span></div>
+    </section>
+
+    <div class="readiness-progress"><span style="width:${progress}%"></span></div>
+
+    <section class="readiness-stats">
+      <div><strong>${hotelsReady+ready}</strong><span>Ready</span></div>
+      <div><strong>${booked}</strong><span>Booked</span></div>
+      <div><strong>${pending}</strong><span>Pending</span></div>
+      <div><strong>${toBook}</strong><span>To book</span></div>
+    </section>
+
+    ${attention.length?`<section class="readiness-section attention-section">
+      <div class="readiness-heading"><div><span>!</span><div><h3>Needs attention</h3><small>Finish these before departure</small></div></div></div>
+      <div class="readiness-list">${attention.map(reservationCard).join("")}</div>
+    </section>`:""}
+
+    <section class="readiness-section">
+      <div class="readiness-heading"><div><span>🏨</span><div><h3>Hotels</h3><small>${hotels.length} of ${hotels.length} booked</small></div></div></div>
+      <div class="readiness-list">${hotels.map(h=>`<article class="readiness-item">
+        <div class="readiness-item-top">
+          <div class="readiness-icon">🏨</div>
+          <div class="readiness-copy"><strong>${escapeHTML(h[1])}</strong><span>${escapeHTML(h[0])} · ${escapeHTML(h[3])}</span></div>
+          <span class="readiness-status ready">Booked</span>
+        </div>
+        ${h[2]?`<div class="readiness-detail">${escapeHTML(h[2])}</div>`:""}
+        <div class="readiness-actions"><a class="secondary" href="${hotelMaps[h[0]]}" target="_blank" rel="noopener">Maps</a></div>
+      </article>`).join("")}</div>
+    </section>
+
+    <section class="readiness-section">
+      <div class="readiness-heading"><div><span>🚆</span><div><h3>Transportation</h3><small>Flights, trains and ferries</small></div></div><button class="text-button" data-open="transport">Timeline</button></div>
+      <div class="readiness-list">${transport.map(reservationCard).join("")}</div>
+    </section>
+
+    <section class="readiness-section">
+      <div class="readiness-heading"><div><span>🎟️</span><div><h3>Attractions & tours</h3><small>Timed entries and guided experiences</small></div></div></div>
+      <div class="readiness-list">${attractions.map(reservationCard).join("")}</div>
+    </section>
+
+    <section class="readiness-section flexible-section">
+      <div class="readiness-heading"><div><span>✓</span><div><h3>No reservation needed</h3><small>Flexible plans that are not incomplete</small></div></div></div>
+      <div class="flexible-list">${flexible.map(x=>`<div><span>✓</span><div><strong>${x[0]}</strong><small>${x[1]} · ${x[2]}</small></div></div>`).join("")}</div>
+    </section>`;
+
+  qsa("#bookings [data-open-imported]").forEach(button=>button.addEventListener("click",async()=>{
+    const popup=window.open("","_blank");
+    try{
+      const ticket=await getImportedTicket(button.dataset.openImported);
+      if(!ticket||!ticket.blob)throw new Error("Ticket not found");
+      const url=URL.createObjectURL(ticket.blob);
+      if(popup)popup.location=url;else window.location.href=url;
+      setTimeout(()=>URL.revokeObjectURL(url),120000);
+    }catch(error){
+      if(popup)popup.close();
+      alert("This ticket could not be opened.");
+    }
+  }));
   bindInternalNavigation();
 }
 function renderPacking(){
@@ -1180,7 +1321,7 @@ async function renderTransport(){
 function renderMore(){
   qs("#more").innerHTML=`
     <div class="section-title"><h2>More</h2><span class="small">Trip tools</span></div>
-    <button class="menu-card" data-open="bookings"><div><strong>Bookings overview</strong><span>Hotels and remaining reservations</span></div><div>›</div></button>
+    <button class="menu-card" data-open="bookings"><div><strong>Trip readiness</strong><span>Bookings, tickets and items needing attention</span></div><div>›</div></button>
     <button class="menu-card" data-open="packing"><div><strong>Packing checklist</strong><span>Track what is ready</span></div><div>›</div></button>
     <button class="menu-card" data-open="notes"><div><strong>Trip notes</strong><span>Confirmation numbers and reminders</span></div><div>›</div></button>
     <button class="menu-card" data-open="currency"><div><strong>Currency converter</strong><span>Convert euros and dollars</span></div><div>›</div></button>

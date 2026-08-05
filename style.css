@@ -611,3 +611,70 @@ textarea{min-height:140px;resize:vertical}
   .today-weather-grid>div{display:flex;justify-content:space-between;align-items:center}
   .today-weather-grid strong{margin-top:0}
 }
+
+
+/* Trip Readiness dashboard */
+.readiness-hero{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:18px;
+  padding:20px;
+  border-radius:22px;
+  background:var(--accent);
+  color:white;
+}
+.readiness-hero h2{margin:5px 0 7px;font-family:Georgia,serif;font-size:25px}
+.readiness-hero p{margin:0;color:rgba(255,255,255,.8);max-width:480px}
+.readiness-ring{
+  flex:none;
+  width:82px;height:82px;
+  border:6px solid rgba(255,255,255,.28);
+  border-top-color:white;
+  border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.readiness-ring strong{font-size:20px}.readiness-ring span{font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.readiness-progress{height:9px;background:rgba(20,63,49,.11);border-radius:999px;overflow:hidden;margin:12px 2px 14px}
+.readiness-progress span{display:block;height:100%;background:var(--accent);border-radius:inherit}
+.readiness-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+.readiness-stats>div{padding:12px 8px;border:1px solid rgba(20,63,49,.12);border-radius:15px;background:var(--surface);text-align:center}
+.readiness-stats strong,.readiness-stats span{display:block}
+.readiness-stats strong{font-size:21px}.readiness-stats span{margin-top:3px;color:var(--muted);font-size:11px}
+.readiness-section{margin-top:22px}
+.readiness-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.readiness-heading>div{display:flex;align-items:center;gap:10px}
+.readiness-heading>div>span{width:34px;height:34px;border-radius:11px;background:rgba(232,240,235,.7);display:grid;place-items:center;font-weight:900;color:var(--accent)}
+.readiness-heading h3{margin:0}.readiness-heading small{display:block;color:var(--muted);margin-top:2px}
+.readiness-list{display:grid;gap:10px}
+.readiness-item{border:1px solid rgba(20,63,49,.12);border-radius:18px;background:var(--surface);padding:14px}
+.readiness-item-top{display:flex;align-items:flex-start;gap:10px}
+.readiness-icon{width:35px;height:35px;border-radius:11px;background:rgba(232,240,235,.65);display:grid;place-items:center;flex:none}
+.readiness-copy{min-width:0;flex:1}
+.readiness-copy strong,.readiness-copy span{display:block}
+.readiness-copy strong{line-height:1.25}.readiness-copy span{margin-top:4px;color:var(--muted);font-size:12px}
+.readiness-status{flex:none;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:900}
+.readiness-status.ready{background:#e5f3eb;color:#17603f}
+.readiness-status.booked{background:#e7eef8;color:#305d8a}
+.readiness-status.pending{background:#fff2d8;color:#815c10}
+.readiness-status.warn{background:#fde7df;color:#8a3e25}
+.readiness-explanation{margin-top:10px;font-size:13px;color:var(--muted)}
+.readiness-detail{margin-top:9px;padding:9px 10px;border-radius:11px;background:rgba(232,240,235,.42);font-size:12px;overflow-wrap:anywhere}
+.readiness-actions{display:flex;gap:8px;margin-top:11px}
+.readiness-actions>*{flex:1;min-height:40px}
+.attention-section{padding:14px;border-radius:20px;background:rgba(255,242,216,.45);border:1px solid rgba(129,92,16,.16)}
+.attention-section .readiness-heading>div>span{background:#fff2d8;color:#815c10}
+.flexible-list{border:1px solid rgba(20,63,49,.12);border-radius:18px;background:var(--surface);overflow:hidden}
+.flexible-list>div{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid rgba(20,63,49,.09)}
+.flexible-list>div:last-child{border-bottom:0}
+.flexible-list>div>span{color:#17603f;font-weight:900}
+.flexible-list strong,.flexible-list small{display:block}
+.flexible-list small{margin-top:3px;color:var(--muted)}
+.text-button{border:0;background:transparent;color:var(--accent);font-weight:800;padding:8px}
+@media(max-width:430px){
+  .readiness-hero{align-items:flex-start}
+  .readiness-ring{width:70px;height:70px}
+  .readiness-stats{grid-template-columns:repeat(2,1fr)}
+  .readiness-item-top{flex-wrap:wrap}
+  .readiness-status{margin-left:45px}
+}
