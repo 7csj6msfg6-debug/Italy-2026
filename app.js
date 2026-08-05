@@ -542,6 +542,8 @@ function renderHome(selectedDate){
       </div>
     </section>`:`<div class="route-complete-banner"><strong>Day complete ✓</strong><div class="small">Every stop for this day is marked complete.</div></div>`}
 
+    ${todayFoodHTML(day)}
+
     <section class="today-glance">
       <div class="today-glance-card"><span>Progress</span><strong>${completed}/${day.events.length}</strong><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>
       <div class="today-glance-card"><span>Tonight</span><strong>${hotel?hotel[1]:day.city==="Flights"?"Travel day":"—"}</strong><small>${hotel?hotel[0]:day.title}</small></div>
@@ -578,6 +580,7 @@ function renderHome(selectedDate){
   qs("#todayDaySelect").addEventListener("change",e=>renderHome(e.target.value));
   qs("#todayPrev").addEventListener("click",()=>{if(dayIndex>0)renderHome(trip[dayIndex-1].date)});
   qs("#todayNext").addEventListener("click",()=>{if(dayIndex<trip.length-1)renderHome(trip[dayIndex+1].date)});
+  qsa("[data-food-guide-city]").forEach(btn=>btn.addEventListener("click",()=>{showView("guide");setTimeout(()=>{const chip=[...document.querySelectorAll('[data-guide-city]')].find(x=>x.dataset.guideCity===btn.dataset.foodGuideCity);if(chip)chip.click()},60)}));
   qsa("[data-home-route]").forEach(btn=>btn.addEventListener("click",()=>openRouteMode(btn.dataset.homeRoute)));
   qsa("[data-home-wallet]").forEach(btn=>btn.addEventListener("click",()=>{
     const index=Number(btn.dataset.homeWallet);
@@ -875,9 +878,65 @@ function parseGoogleMapsShare(value){
   return {maps:candidate,name,city,needsDetails:shortLink||!name};
 }
 
+
+const VENICE_FOOD_GUIDE=[
+  {id:"venice-0915-coffee-torrefazione",name:"Torrefazione Cannaregio",city:"Venice",category:"Coffee",plannedDay:"2026-09-15",rank:1,topPick:true,favorite:true,price:"$",mealWindow:"Quick coffee after check-in",why:"Excellent espresso and an authentic local coffee stop to recharge before sightseeing.",notes:"Excellent espresso · Authentic local coffee · Great after hotel check-in",dishes:["Espresso","Cappuccino"],maps:"https://www.google.com/maps/search/?api=1&query=Torrefazione+Cannaregio+Venice"},
+  {id:"venice-0915-lunch-dal-moros",name:"Dal Moro’s Fresh Pasta To Go",city:"Venice",category:"Lunch",plannedDay:"2026-09-15",rank:1,topPick:true,favorite:true,price:"$",mealWindow:"Around 1:00 PM",why:"Fresh pasta made to order, about a five-minute walk from Rio Hotel, with fast service so you can maximize sightseeing.",notes:"Top lunch pick · Fast handmade pasta near Rio Hotel",dishes:["Cacio e Pepe","Pesto","Bolognese"],maps:"https://www.google.com/maps/search/?api=1&query=Dal+Moro%27s+Fresh+Pasta+To+Go+Venice"},
+  {id:"venice-0915-lunch-portego",name:"Osteria al Portego",city:"Venice",category:"Lunch",plannedDay:"2026-09-15",rank:2,price:"$$",mealWindow:"Lunch alternative",notes:"Traditional Venetian bacaro; ideal if you would rather sit down.",dishes:["Cicchetti","Spritz","Mixed seafood bites"],maps:"https://www.google.com/maps/search/?api=1&query=Osteria+al+Portego+Venice"},
+  {id:"venice-0915-lunch-al-merca",name:"Al Mercà",city:"Venice",category:"Lunch",plannedDay:"2026-09-15",rank:3,price:"$",mealWindow:"Quick snack alternative",notes:"Tiny wine bar for a fast bite.",dishes:["Prosciutto sandwich","Spritz"],maps:"https://www.google.com/maps/search/?api=1&query=Al+Merc%C3%A0+Venice"},
+  {id:"venice-0915-gelato-suso",name:"Suso Gelatoteca",city:"Venice",category:"Gelato",plannedDay:"2026-09-15",rank:1,topPick:true,favorite:true,price:"$",mealWindow:"Afternoon gelato",why:"One of Venice’s best gelato shops and a don’t-miss stop.",notes:"Signature Venice gelato stop",dishes:["Crema del Doge","Pistachio","Dark Chocolate"],maps:"https://www.google.com/maps/search/?api=1&query=Suso+Gelatoteca+Venice"},
+  {id:"venice-0915-gelato-gallonetto",name:"Gelatoteca Gallonetto",city:"Venice",category:"Gelato",plannedDay:"2026-09-15",rank:2,price:"$",mealWindow:"Gelato alternative",notes:"Less crowded with excellent fruit flavors.",dishes:["Fruit flavors"],maps:"https://www.google.com/maps/search/?api=1&query=Gelatoteca+Gallonetto+Venice"},
+  {id:"venice-0915-dinner-testiere",name:"Osteria alle Testiere",city:"Venice",category:"Dinner",plannedDay:"2026-09-15",rank:1,topPick:true,favorite:true,price:"€€€",mealWindow:"7:00–8:00 PM",why:"One of Venice’s best restaurants, with an intimate seafood-focused menu.",notes:"Reservation recommended",reservation:"Recommended",dishes:["Fresh seafood special","Homemade pasta","Tiramisu"],maps:"https://www.google.com/maps/search/?api=1&query=Osteria+alle+Testiere+Venice"},
+  {id:"venice-0915-dinner-carampane",name:"Antiche Carampane",city:"Venice",category:"Dinner",plannedDay:"2026-09-15",rank:2,price:"€€€",mealWindow:"Dinner alternative",notes:"Hidden gem for classic Venetian cuisine and seafood.",dishes:["Classic Venetian seafood"],maps:"https://www.google.com/maps/search/?api=1&query=Antiche+Carampane+Venice"},
+  {id:"venice-0915-dinner-vini-gigio",name:"Vini da Gigio",city:"Venice",category:"Dinner",plannedDay:"2026-09-15",rank:3,price:"€€",mealWindow:"Dinner alternative",notes:"Warm atmosphere and excellent homemade pasta.",dishes:["Homemade pasta"],maps:"https://www.google.com/maps/search/?api=1&query=Vini+da+Gigio+Venice"},
+  {id:"venice-0916-breakfast-rosa",name:"Rosa Salva",city:"Venice",category:"Breakfast",plannedDay:"2026-09-16",rank:1,topPick:true,favorite:true,price:"$",mealWindow:"Before the 10:00 AM tour",why:"Historic Venetian pastry shop with quick coffee and pastries before the booked tour.",notes:"Classic Venetian breakfast before St. Mark’s",dishes:["Cappuccino","Cornetto"],maps:"https://www.google.com/maps/search/?api=1&query=Rosa+Salva+Venice"},
+  {id:"venice-0916-breakfast-marchini",name:"Marchini Time",city:"Venice",category:"Breakfast",plannedDay:"2026-09-16",rank:2,price:"$",mealWindow:"Breakfast alternative",notes:"Excellent pastries and quick service.",dishes:["Pastries","Coffee"],maps:"https://www.google.com/maps/search/?api=1&query=Marchini+Time+Venice"},
+  {id:"venice-0916-lunch-do-spade",name:"Cantina Do Spade",city:"Venice",category:"Lunch",plannedDay:"2026-09-16",rank:1,topPick:true,favorite:true,price:"€€",mealWindow:"After the St. Mark’s tour",why:"One of Venice’s oldest taverns and an authentic place for cicchetti and seafood pasta.",notes:"Authentic Venetian lunch",dishes:["Cicchetti","Seafood pasta","House wine"],maps:"https://www.google.com/maps/search/?api=1&query=Cantina+Do+Spade+Venice"},
+  {id:"venice-0916-lunch-madonna",name:"Trattoria Alla Madonna",city:"Venice",category:"Lunch",plannedDay:"2026-09-16",rank:2,price:"€€",mealWindow:"Lunch alternative",notes:"Classic Venice restaurant with excellent seafood.",dishes:["Seafood"],maps:"https://www.google.com/maps/search/?api=1&query=Trattoria+Alla+Madonna+Venice"},
+  {id:"venice-0916-lunch-bancogiro",name:"Osteria Bancogiro",city:"Venice",category:"Lunch",plannedDay:"2026-09-16",rank:3,price:"€€",mealWindow:"Lunch alternative",notes:"Beautiful Grand Canal location with modern Venetian cuisine.",dishes:["Modern Venetian cuisine"],maps:"https://www.google.com/maps/search/?api=1&query=Osteria+Bancogiro+Venice"},
+  {id:"venice-0916-dessert-mercanti",name:"I Tre Mercanti",city:"Venice",category:"Dessert",plannedDay:"2026-09-16",rank:1,topPick:true,favorite:true,locked:true,price:"€",mealWindow:"Afternoon dessert",why:"Venice is often credited as the birthplace of tiramisu, making this the official dessert stop.",notes:"Official locked tiramisu stop",dishes:["Classic Tiramisu","Pistachio Tiramisu to share"],maps:"https://www.google.com/maps/search/?api=1&query=I+Tre+Mercanti+Venice"},
+  {id:"venice-0916-gelato-suso",name:"Suso Gelatoteca",city:"Venice",category:"Gelato",plannedDay:"2026-09-16",rank:1,topPick:true,price:"$",mealWindow:"If skipped on Day 1",notes:"Use this as the backup opportunity if you did not visit Suso on arrival day.",dishes:["Crema del Doge","Pistachio","Dark Chocolate"],maps:"https://www.google.com/maps/search/?api=1&query=Suso+Gelatoteca+Venice"},
+  {id:"venice-0916-dinner-zucca",name:"La Zucca",city:"Venice",category:"Dinner",plannedDay:"2026-09-16",rank:1,topPick:true,favorite:true,price:"€€",mealWindow:"Final dinner in Venice",why:"A cozy final dinner known for seasonal Venetian dishes and homemade pasta.",notes:"Top final-night dinner pick",dishes:["Seasonal Venetian dishes","Homemade pasta"],maps:"https://www.google.com/maps/search/?api=1&query=La+Zucca+Venice"},
+  {id:"venice-0916-dinner-ai-artisti",name:"Osteria Enoteca Ai Artisti",city:"Venice",category:"Dinner",plannedDay:"2026-09-16",rank:2,price:"€€€",mealWindow:"Dinner alternative",notes:"Romantic setting, excellent wine list and fresh pasta.",dishes:["Fresh pasta","Wine"],maps:"https://www.google.com/maps/search/?api=1&query=Osteria+Enoteca+Ai+Artisti+Venice"},
+  {id:"venice-0916-dinner-covino",name:"CoVino",city:"Venice",category:"Dinner",plannedDay:"2026-09-16",rank:3,price:"€€€",mealWindow:"Dinner alternative",notes:"Small tasting-menu restaurant for a memorable final dinner.",dishes:["Tasting menu"],maps:"https://www.google.com/maps/search/?api=1&query=CoVino+Venice"}
+];
+const VENICE_FOOD_BUCKET=["Fresh handmade pasta","Cicchetti","Venetian Spritz","Tiramisu","Gelato","Fresh seafood"];
+function ensureVeniceFoodGuide(){
+  const current=guideLoad('guide-places',[]);
+  const ids=new Set(current.map(x=>x.id));
+  let changed=false;
+  VENICE_FOOD_GUIDE.forEach(place=>{if(!ids.has(place.id)){current.push({...place});changed=true}});
+  if(changed)guideSave('guide-places',current);
+  return current;
+}
+function foodRankLabel(place){return place.rank===1?'🥇 Top Pick':place.rank===2?'🥈 Alternative':'🥉 Another Option'}
+function foodCategoryIcon(category){return ({Breakfast:'☕',Coffee:'☕',Lunch:'🍝',Dinner:'🍽️',Gelato:'🍨',Dessert:'🍮',Bar:'🍷'})[category]||'🍴'}
+function foodCategoryOrder(category){return ({Coffee:1,Breakfast:2,Lunch:3,Dessert:4,Gelato:5,Dinner:6})[category]||20}
+function foodBucketState(){return guideLoad('venice-food-bucket',{})}
+function setFoodBucketState(value){guideSave('venice-food-bucket',value)}
+function todayFoodHTML(day){
+  const places=ensureVeniceFoodGuide().filter(p=>p.plannedDay===day.date);
+  if(!places.length)return '';
+  const grouped={};places.forEach(p=>(grouped[p.category]||=[]).push(p));
+  const categories=Object.keys(grouped).sort((a,b)=>foodCategoryOrder(a)-foodCategoryOrder(b));
+  return `<section class="today-food-section">
+    <div class="today-food-heading"><div><span>🍴</span><div><div class="focus-label">CURATED FOR ${day.city.toUpperCase()}</div><h2>Today’s food suggestions</h2></div></div><button class="text-button" data-food-guide-city="${day.city}">View all</button></div>
+    <div class="today-food-groups">${categories.map(category=>{
+      const items=grouped[category].sort((a,b)=>(a.rank||9)-(b.rank||9));
+      const top=items[0],alts=items.slice(1);
+      return `<article class="today-food-group">
+        <div class="today-food-category"><span>${foodCategoryIcon(category)}</span><div><strong>${category}</strong><small>${escapeHTML(top.mealWindow||'')}</small></div></div>
+        <div class="today-food-top"><div><span class="food-rank top">${foodRankLabel(top)}</span><h3>${escapeHTML(top.name)}</h3>${top.notes?`<p>${escapeHTML(top.notes)}</p>`:''}</div><a href="${escapeHTML(guideMapsUrl(top))}" target="_blank" rel="noopener">Maps</a></div>
+        ${alts.length?`<div class="today-food-alts"><span>Alternatives</span>${alts.map(p=>`<a href="${escapeHTML(guideMapsUrl(p))}" target="_blank" rel="noopener"><strong>${escapeHTML(p.name)}</strong><small>${foodRankLabel(p)}</small></a>`).join('')}</div>`:''}
+      </article>`;
+    }).join('')}</div>
+  </section>`;
+}
+
 function renderGuide(){
+  ensureVeniceFoodGuide();
   const cities=['Venice','Florence','Rome','Naples','Capri'];
-  const categories=['Breakfast','Coffee','Lunch','Dinner','Gelato','Pizza','Bar','Shopping','Sightseeing','Other'];
+  const categories=['Breakfast','Coffee','Lunch','Dinner','Gelato','Dessert','Pizza','Bar','Shopping','Sightseeing','Other'];
   const expenseCategories=['Food','Transportation','Activities','Shopping','Hotel','Other'];
   const tripDays=trip.map(day=>({date:day.date,label:`${shortDate(day.date)} · ${day.city}`}));
   let activeSection='places',activeCity='All',placeSearch='',editingPlaceId=null;
@@ -959,15 +1018,19 @@ function renderGuide(){
     const filtered=places.filter(p=>(activeCity==='All'||p.city===activeCity)&&(!placeSearch||`${p.name} ${p.city} ${p.category} ${p.notes||''}`.toLowerCase().includes(placeSearch)));
     const favorites=places.filter(p=>p.favorite).length;
     qs('#guidePlacesSummary').innerHTML=`<div class="guide-mini-summary"><span><strong>${places.length}</strong> saved</span><span><strong>${favorites}</strong> favorite${favorites===1?'':'s'}</span></div>`;
-    const sorted=[...filtered].sort((a,b)=>Number(b.favorite)-Number(a.favorite)||a.city.localeCompare(b.city)||a.name.localeCompare(b.name));
-    qs('#guideCards').innerHTML=sorted.length?sorted.map(p=>{
+    const sorted=[...filtered].sort((a,b)=>Number(b.favorite)-Number(a.favorite)||a.city.localeCompare(b.city)||foodCategoryOrder(a.category)-foodCategoryOrder(b.category)||(a.rank||9)-(b.rank||9)||a.name.localeCompare(b.name));
+    const placeCard=p=>{
       const day=p.plannedDay?trip.find(d=>d.date===p.plannedDay):null;
-      return `<article class="guide-place-card">
+      return `<article class="guide-place-card ${p.topPick?'curated-top-pick':''}">
         <div class="guide-place-head">
-          <div><div class="guide-place-kicker">${escapeHTML(p.city)} · ${escapeHTML(p.category)}</div><h3>${escapeHTML(p.name)}</h3></div>
+          <div><div class="guide-place-kicker">${escapeHTML(p.city)} · ${foodCategoryIcon(p.category)} ${escapeHTML(p.category)}</div><h3>${escapeHTML(p.name)}</h3></div>
           <button class="favorite-button ${p.favorite?'active':''}" data-favorite-place="${p.id}" aria-label="${p.favorite?'Remove favorite':'Add favorite'}">★</button>
         </div>
+        ${p.rank?`<div class="food-rank ${p.rank===1?'top':''}">${foodRankLabel(p)}</div>`:''}
+        <div class="food-place-meta">${p.mealWindow?`<span>🕐 ${escapeHTML(p.mealWindow)}</span>`:''}${p.price?`<span>💰 ${escapeHTML(p.price)}</span>`:''}${p.reservation?`<span>⚠️ Reservation ${escapeHTML(p.reservation.toLowerCase())}</span>`:''}${p.locked?`<span>🔒 Official stop</span>`:''}</div>
+        ${p.why?`<div class="food-why"><strong>Why I picked it</strong><p>${escapeHTML(p.why)}</p></div>`:''}
         ${p.notes?`<p>${escapeHTML(p.notes)}</p>`:''}
+        ${p.dishes?.length?`<div class="food-dishes"><strong>Recommended</strong><div>${p.dishes.map(x=>`<span>${escapeHTML(x)}</span>`).join('')}</div></div>`:''}
         ${day?`<div class="guide-planned-day">Planned ${shortDate(p.plannedDay)} · ${escapeHTML(day.city)}</div>`:''}
         <div class="guide-place-actions">
           <a class="primary" href="${escapeHTML(guideMapsUrl(p))}" target="_blank" rel="noopener">Maps</a>
@@ -977,7 +1040,18 @@ function renderGuide(){
           <button class="secondary danger-text" data-delete-place="${p.id}">Delete</button>
         </div>
       </article>`;
-    }).join(''):`<div class="guide-empty"><strong>${places.length?'No matching places':'No saved places yet'}</strong><span>${places.length?'Try another city or search.':'Add restaurants, cafés, gelato shops and sights you want handy during the trip.'}</span></div>`;
+    };
+    if(sorted.length&&activeCity==='Venice'&&!placeSearch){
+      const grouped={};sorted.forEach(p=>(grouped[p.category]||=[]).push(p));
+      const ordered=Object.keys(grouped).sort((a,b)=>foodCategoryOrder(a)-foodCategoryOrder(b));
+      const bucket=foodBucketState();
+      qs('#guideCards').innerHTML=`<section class="venice-food-intro"><div><span>🇮🇹</span><div><div class="focus-label">PERSONAL FOOD GUIDE</div><h2>Venice</h2><p>Top picks, alternatives, signature orders and food goals for September 15–16.</p></div></div></section>
+        <div class="food-category-list">${ordered.map((category,i)=>`<details class="food-category-section" ${i<2?'open':''}><summary><span>${foodCategoryIcon(category)}</span><strong>${category}</strong><small>${grouped[category].length} place${grouped[category].length===1?'':'s'}</small><b>⌄</b></summary><div class="food-category-cards">${grouped[category].map(placeCard).join('')}</div></details>`).join('')}</div>
+        <section class="food-passport"><div class="food-passport-head"><span>🏆</span><div><h3>Venice Food Passport</h3><small>Check these off as you experience them</small></div></div>${VENICE_FOOD_BUCKET.map(item=>`<label class="food-passport-item"><input type="checkbox" data-food-bucket="${escapeHTML(item)}" ${bucket[item]?'checked':''}><span>${escapeHTML(item)}</span></label>`).join('')}</section>`;
+      qsa('[data-food-bucket]').forEach(box=>box.addEventListener('change',()=>{const state=foodBucketState();state[box.dataset.foodBucket]=box.checked;setFoodBucketState(state)}));
+    }else{
+      qs('#guideCards').innerHTML=sorted.length?sorted.map(placeCard).join(''):`<div class="guide-empty"><strong>${places.length?'No matching places':'No saved places yet'}</strong><span>${places.length?'Try another city or search.':'Add restaurants, cafés, gelato shops and sights you want handy during the trip.'}</span></div>`;
+    }
 
     qsa('[data-favorite-place]').forEach(btn=>btn.addEventListener('click',()=>{
       const items=guideLoad('guide-places',[]), item=items.find(x=>x.id===btn.dataset.favoritePlace);if(!item)return;
@@ -1026,7 +1100,7 @@ function renderGuide(){
   qs('#savePlace').addEventListener('click',()=>{
     const name=qs('#placeName').value.trim();if(!name){qs('#placeEditorMessage').textContent='Enter a place name.';return}
     const items=guideLoad('guide-places',[]);
-    const value={id:editingPlaceId||guideUid(),name,city:qs('#placeCity').value,category:qs('#placeCategory').value,notes:qs('#placeNotes').value.trim(),maps:qs('#placeMaps').value.trim(),phone:qs('#placePhone').value.trim(),website:qs('#placeWebsite').value.trim(),plannedDay:qs('#placeDay').value,favorite:qs('#placeFavorite').checked};
+    const existing=editingPlaceId?items.find(x=>x.id===editingPlaceId):null; const value={...(existing||{}),id:editingPlaceId||guideUid(),name,city:qs('#placeCity').value,category:qs('#placeCategory').value,notes:qs('#placeNotes').value.trim(),maps:qs('#placeMaps').value.trim(),phone:qs('#placePhone').value.trim(),website:qs('#placeWebsite').value.trim(),plannedDay:qs('#placeDay').value,favorite:qs('#placeFavorite').checked};
     const index=items.findIndex(x=>x.id===editingPlaceId);if(index>=0)items[index]=value;else items.push(value);
     guideSave('guide-places',items);overlay.classList.add('hidden');activeCity=value.city;qsa('[data-guide-city]').forEach(x=>x.classList.toggle('active',x.dataset.guideCity===activeCity));renderPlaces();
   });
