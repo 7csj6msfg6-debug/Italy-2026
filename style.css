@@ -481,7 +481,7 @@ textarea{min-height:140px;resize:vertical}
 
 
 /* Places & Spending guide upgrade */
-.guide-section-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;margin:12px 0 16px;background:var(--surface-2);border-radius:15px}
+.guide-section-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:5px;margin:12px 0 16px;background:var(--surface-2);border-radius:15px}
 .guide-section-tab{border:0;background:transparent;color:var(--muted);padding:10px;border-radius:11px;font-weight:800}
 .guide-section-tab.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 5px rgba(24,45,36,.10)}
 .guide-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
@@ -726,3 +726,18 @@ textarea{min-height:140px;resize:vertical}
 .food-companion-box>div:first-of-type{border-top:0}
 .food-companion-box.skip{background:var(--surface-2)}
 .food-passport-item span b{color:var(--accent);margin-right:3px}
+
+
+/* Nearby Guide */
+.nearby-hero{padding:18px;border-radius:21px;background:linear-gradient(145deg,var(--accent),var(--accent-2));color:white;margin-bottom:12px;box-shadow:0 12px 28px rgba(20,63,49,.16)}
+.nearby-hero h2{margin:5px 0 7px}.nearby-hero p{margin:0;color:rgba(255,255,255,.82);line-height:1.45;font-size:13px}
+.nearby-source-grid{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:8px;margin:0 0 12px}.nearby-source-grid button{min-height:44px}
+.nearby-city-tabs{margin-bottom:0}.nearby-filter-tabs{padding-bottom:10px}
+.nearby-status{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 13px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2);margin-bottom:12px;font-size:12px;color:var(--muted)}
+.nearby-status>div{display:flex;flex-direction:column;gap:2px}.nearby-status strong{color:var(--text);font-size:13px}.nearby-status>span{white-space:nowrap;font-weight:800;color:var(--accent)}
+.nearby-list{display:grid;gap:11px}.nearby-card{padding:15px;border:1px solid var(--line);border-radius:19px;background:var(--surface);box-shadow:0 7px 22px rgba(43,50,46,.04)}
+.nearby-card h3{margin:5px 0 8px;font-size:19px}.nearby-card p{margin:9px 0;color:var(--muted);line-height:1.42;font-size:13px}
+.nearby-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}.nearby-distance{display:flex;align-items:center;gap:8px;color:var(--accent);font-size:12px;font-weight:800}.nearby-distance strong{display:grid;place-items:center;width:25px;height:25px;border-radius:9px;background:var(--accent-soft);font-size:12px}.nearby-official{padding:5px 8px;border-radius:999px;background:#f3e7ce;color:#80581e;font-size:11px;font-weight:850}
+.nearby-dishes{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}.nearby-dishes span{padding:6px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:11px;font-weight:700}
+.nearby-days{font-size:12px;color:var(--muted);font-weight:700;margin:8px 0}.nearby-actions{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}.nearby-actions a,.nearby-actions button{text-align:center}
+@media(max-width:620px){.nearby-source-grid{grid-template-columns:1fr 1fr}.nearby-source-grid #nearbyUseLocation{grid-column:1/-1}.nearby-status{align-items:flex-start}.nearby-status>span{white-space:normal}.nearby-actions{grid-template-columns:1fr}}

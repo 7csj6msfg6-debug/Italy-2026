@@ -846,6 +846,71 @@ function normalizeWebUrl(value){
   return /^https?:\/\//i.test(v)?v:`https://${v}`;
 }
 
+
+const GUIDE_PLACE_COORDS={"Venice|Ai Artisti":{"lat":45.4311,"lng":12.3246},"Venice|Al Mercà":{"lat":45.438,"lng":12.3359},"Venice|Alla Madonna":{"lat":45.438,"lng":12.3347},"Venice|Antiche Carampane":{"lat":45.438,"lng":12.3308},"Venice|Bancogiro":{"lat":45.4385,"lng":12.3359},"Venice|Cantina Do Spade":{"lat":45.4382,"lng":12.334},"Venice|CoVino":{"lat":45.4347,"lng":12.35},"Venice|Dal Moro’s Fresh Pasta To Go":{"lat":45.436,"lng":12.3404},"Venice|Gelatoteca Gallonetto":{"lat":45.4358,"lng":12.343},"Venice|I Tre Mercanti":{"lat":45.4361,"lng":12.3405},"Venice|La Zucca":{"lat":45.4406,"lng":12.3261},"Venice|Marchini Time":{"lat":45.4361,"lng":12.3352},"Venice|Osteria al Portego":{"lat":45.4376,"lng":12.3423},"Venice|Osteria alle Testiere":{"lat":45.4353,"lng":12.3437},"Venice|Rosa Salva":{"lat":45.4356,"lng":12.3376},"Venice|Suso Gelatoteca":{"lat":45.4376,"lng":12.3368},"Venice|Vini da Gigio":{"lat":45.443,"lng":12.3318},"Florence|All’Antico Vinaio":{"lat":43.7688,"lng":11.2585},"Florence|Babae":{"lat":43.7682,"lng":11.2463},"Florence|Buca Lapi":{"lat":43.7727,"lng":11.2506},"Florence|Caffè Gilli":{"lat":43.7719,"lng":11.2544},"Florence|Caffè Libertà":{"lat":43.7841,"lng":11.2654},"Florence|Cantina de’ Pucci":{"lat":43.7737,"lng":11.2559},"Florence|Ditta Artigianale":{"lat":43.7687,"lng":11.2588},"Florence|Enoteca Pitti Gola e Cantina":{"lat":43.7672,"lng":11.2504},"Florence|Gelateria dei Neri":{"lat":43.7688,"lng":11.2595},"Florence|Gustarium":{"lat":43.7707,"lng":11.2587},"Florence|I Fratellini":{"lat":43.7714,"lng":11.2564},"Florence|Il Latini":{"lat":43.7724,"lng":11.2487},"Florence|Il Santo Bevitore":{"lat":43.768,"lng":11.2468},"Florence|La Buchetta":{"lat":43.7676,"lng":11.2617},"Florence|La Giostra":{"lat":43.7714,"lng":11.2633},"Florence|Melaleuca":{"lat":43.7696,"lng":11.265},"Florence|Mercato Centrale":{"lat":43.7767,"lng":11.2535},"Florence|Osteria Belle Donne":{"lat":43.773,"lng":11.2499},"Florence|Osteria Pastella":{"lat":43.775,"lng":11.2491},"Florence|Osteria del Cinghiale Bianco":{"lat":43.7682,"lng":11.2495},"Florence|Osteria dell’Enoteca":{"lat":43.767,"lng":11.246},"Florence|Perché No!":{"lat":43.7717,"lng":11.2554},"Florence|Pino’s Sandwiches":{"lat":43.7705,"lng":11.2632},"Florence|Scudieri":{"lat":43.7732,"lng":11.2558},"Florence|Sergio Gozzi":{"lat":43.7757,"lng":11.2533},"Florence|Trattoria Mario":{"lat":43.7767,"lng":11.2531},"Florence|Trattoria ZaZa":{"lat":43.7768,"lng":11.2539},"Florence|Vivoli":{"lat":43.7701,"lng":11.2618},"Rome|Ai Tre Scalini":{"lat":41.8943,"lng":12.4924},"Rome|Armando al Pantheon":{"lat":41.8986,"lng":12.4768},"Rome|Aroma":{"lat":41.8898,"lng":12.4965},"Rome|Barnum Café":{"lat":41.8958,"lng":12.4737},"Rome|Come il Latte":{"lat":41.9067,"lng":12.4941},"Rome|Da Enzo al 29":{"lat":41.8892,"lng":12.4736},"Rome|Emma Pizzeria":{"lat":41.8942,"lng":12.475},"Rome|Enoteca Costantini":{"lat":41.9101,"lng":12.4601},"Rome|Fatamorgana":{"lat":41.8958,"lng":12.4916},"Rome|Forno Campo de’ Fiori":{"lat":41.8955,"lng":12.4723},"Rome|Frigidarium":{"lat":41.8984,"lng":12.4711},"Rome|Gelateria del Teatro":{"lat":41.899,"lng":12.4701},"Rome|Giolitti":{"lat":41.9006,"lng":12.4768},"Rome|Grezzo Raw Chocolate":{"lat":41.8957,"lng":12.4927},"Rome|Hostaria Romana":{"lat":41.9033,"lng":12.489},"Rome|Il Goccetto":{"lat":41.8963,"lng":12.4702},"Rome|Il Segreto":{"lat":41.9077,"lng":12.4605},"Rome|La Taverna dei Fori Imperiali":{"lat":41.8932,"lng":12.4901},"Rome|La Zanzara":{"lat":41.9068,"lng":12.4645},"Rome|Maccarone":{"lat":41.8995,"lng":12.4792},"Rome|Old Bridge Gelateria":{"lat":41.9067,"lng":12.4536},"Rome|Otello":{"lat":41.8892,"lng":12.4695},"Rome|Panino Divino":{"lat":41.9069,"lng":12.4578},"Rome|Pastasciutta Vaticano":{"lat":41.9064,"lng":12.4538},"Rome|Pergamino Caffè":{"lat":41.9078,"lng":12.4571},"Rome|Pierluigi":{"lat":41.8955,"lng":12.4707},"Rome|Pipero Roma":{"lat":41.8951,"lng":12.4727},"Rome|Roscioli":{"lat":41.8957,"lng":12.4721},"Rome|Roscioli Forno":{"lat":41.8957,"lng":12.4725},"Rome|Roscioli Salumeria con Cucina":{"lat":41.8957,"lng":12.4721},"Rome|Salotto 42":{"lat":41.9008,"lng":12.4796},"Rome|Sant’Eustachio":{"lat":41.8975,"lng":12.4746},"Rome|Sant’Eustachio Il Caffè":{"lat":41.8975,"lng":12.4746},"Rome|Sciascia Caffè 1919":{"lat":41.9088,"lng":12.4625},"Rome|Supplizio":{"lat":41.8956,"lng":12.469},"Rome|Tazza d’Oro":{"lat":41.899,"lng":12.4773},"Rome|Tonnarello":{"lat":41.8891,"lng":12.4704},"Rome|Trapizzino":{"lat":41.8818,"lng":12.4714},"Rome|Trieste Pizza":{"lat":41.8937,"lng":12.493},"Rome|Urbana 47":{"lat":41.8959,"lng":12.4915},"Naples|50 Kalò":{"lat":40.8275,"lng":14.2198},"Naples|Antica Pizza Fritta da Zia Esterina":{"lat":40.8362,"lng":14.2484},"Naples|Casa Infante":{"lat":40.84,"lng":14.2488},"Naples|Concettina ai Tre Santi":{"lat":40.8591,"lng":14.2515},"Naples|Cuoppo Friggitori Napoletani":{"lat":40.8507,"lng":14.2587},"Naples|Gay-Odin":{"lat":40.8418,"lng":14.2482},"Naples|Gino e Toto Sorbillo":{"lat":40.8503,"lng":14.2576},"Naples|Gran Caffè Gambrinus":{"lat":40.8356,"lng":14.2481},"Naples|La Locanda Gesù Vecchio":{"lat":40.8477,"lng":14.2513},"Naples|L’Antica Pizzeria da Michele":{"lat":40.8495,"lng":14.2631},"Naples|Mexico Caffè":{"lat":40.8525,"lng":14.2713},"Naples|Mimì alla Ferrovia":{"lat":40.8557,"lng":14.2698},"Naples|Pintauro":{"lat":40.8387,"lng":14.2485},"Naples|Sfogliatella Mary":{"lat":40.8378,"lng":14.249},"Naples|Starita a Materdei":{"lat":40.8553,"lng":14.2477},"Naples|Tandem Ragù":{"lat":40.8486,"lng":14.2555},"Naples|Trattoria da Nennella":{"lat":40.8411,"lng":14.2463},"Capri|Bar Grotta Azzurra":{"lat":40.5564,"lng":14.242},"Capri|Da Paolino":{"lat":40.5575,"lng":14.2385},"Capri|Lemon Granita":{"lat":40.5502,"lng":14.242},"Capri|Pulalli":{"lat":40.55,"lng":14.2425},"Capri|Ristorante Verginiello":{"lat":40.5507,"lng":14.242}};
+const GUIDE_LOCATION_ANCHORS={
+  hotels:{
+    Venice:{lat:45.4349,lng:12.3404,label:'Rio Hotel'},
+    Florence:{lat:43.7732,lng:11.2556,label:'B&B A Florence View'},
+    Rome:{lat:41.8956,lng:12.4770,label:'Temple View GuestHouse'},
+    Naples:{lat:40.8422,lng:14.2532,label:'Napolinn B&B'},
+    Capri:{lat:40.5565,lng:14.2422,label:'Marina Grande'}
+  },
+  plan:{
+    Venice:{lat:45.4342,lng:12.3388,label:'St. Mark’s and central Venice'},
+    Florence:{lat:43.7731,lng:11.2560,label:'Duomo and central Florence'},
+    Rome:{lat:41.8986,lng:12.4769,label:'Pantheon and historic center'},
+    Naples:{lat:40.8493,lng:14.2573,label:'Spaccanapoli and historic center'},
+    Capri:{lat:40.5503,lng:14.2422,label:'Capri Town and the Piazzetta'}
+  }
+};
+
+const GUIDE_DAY_ANCHORS={
+  '2026-09-15':{city:'Venice',lat:45.4342,lng:12.3388,label:'September 15 · St. Mark’s arrival route'},
+  '2026-09-16':{city:'Venice',lat:45.4378,lng:12.3365,label:'September 16 · Rialto and central Venice'},
+  '2026-09-17':{city:'Florence',lat:43.7731,lng:11.2560,label:'September 17 · Duomo arrival route'},
+  '2026-09-18':{city:'Florence',lat:43.7714,lng:11.2590,label:'September 18 · museum-day center'},
+  '2026-09-19':{city:'Florence',lat:43.7728,lng:11.2540,label:'September 19 · pre-tour Florence center'},
+  '2026-09-20':{city:'Rome',lat:41.8986,lng:12.4769,label:'September 20 · Pantheon and Piazza Navona'},
+  '2026-09-21':{city:'Rome',lat:41.8902,lng:12.4922,label:'September 21 · Colosseum and Monti'},
+  '2026-09-22':{city:'Rome',lat:41.9065,lng:12.4536,label:'September 22 · Vatican Museums'},
+  '2026-09-23':{city:'Rome',lat:41.9059,lng:12.4823,label:'September 23 · Spanish Steps route'},
+  '2026-09-24':{city:'Naples',lat:40.8493,lng:14.2573,label:'September 24 · historic Naples'},
+  '2026-09-25':{city:'Capri',lat:40.5503,lng:14.2422,label:'September 25 · Capri Town'},
+  '2026-09-26':{city:'Naples',lat:40.8422,lng:14.2532,label:'September 26 · return to Naples'}
+};
+function guidePlanOrigin(city){
+  const exact=GUIDE_DAY_ANCHORS[todayISO()];
+  return exact&&exact.city===city?{...exact}:{...GUIDE_LOCATION_ANCHORS.plan[city]};
+}
+function guideCoordinates(place){
+  const lat=Number(place?.lat),lng=Number(place?.lng);
+  if(Number.isFinite(lat)&&Number.isFinite(lng))return {lat,lng};
+  const url=String(place?.maps||'');
+  const patterns=[/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,/query=(-?\d+(?:\.\d+)?)(?:,|%2C)(-?\d+(?:\.\d+)?)/i,/q=(-?\d+(?:\.\d+)?)(?:,|%2C)(-?\d+(?:\.\d+)?)/i];
+  for(const pattern of patterns){const match=url.match(pattern);if(match)return {lat:Number(match[1]),lng:Number(match[2])}}
+  return GUIDE_PLACE_COORDS[`${place?.city||''}|${place?.name||''}`]||null;
+}
+function guideDistanceKm(a,b){
+  const toRad=value=>value*Math.PI/180,R=6371;
+  const dLat=toRad(b.lat-a.lat),dLng=toRad(b.lng-a.lng),lat1=toRad(a.lat),lat2=toRad(b.lat);
+  const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+function guideDistanceLabel(km){
+  const walkingKm=km*1.22,minutes=Math.max(1,Math.round(walkingKm/.078));
+  if(km<.08)return `About ${Math.max(25,Math.round(km*1000/25)*25)} m away · ~${minutes} min walk`;
+  if(km<2.5)return `${Math.round(km*1000)} m away · ~${minutes} min walk`;
+  return `${km.toFixed(1)} km away`;
+}
+function guideDirectionsUrl(place,origin){
+  const destination=[place.name,place.city].filter(Boolean).join(', ');
+  return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${encodeURIComponent(destination)}&travelmode=walking`;
+}
+function nearestGuideCity(origin){
+  return Object.entries(GUIDE_LOCATION_ANCHORS.hotels).map(([city,point])=>({city,distance:guideDistanceKm(origin,point)})).sort((a,b)=>a.distance-b.distance)[0]?.city||'Venice';
+}
+
 function parseGoogleMapsShare(value){
   const raw=(value||'').trim();
   if(!raw)return null;
@@ -937,12 +1002,16 @@ function renderGuide(){
   const categories=['Breakfast','Coffee','Lunch','Dinner','Gelato','Dessert','Pizza','Bar','Shopping','Sightseeing','Other'];
   const expenseCategories=['Food','Transportation','Activities','Shopping','Hotel','Other'];
   const tripDays=trip.map(day=>({date:day.date,label:`${shortDate(day.date)} · ${day.city}`}));
+  const todayTripDay=trip.find(day=>day.date===todayISO());
   let activeSection='places',activeCity='All',placeSearch='',editingPlaceId=null;
+  let activeNearbyCity=['Venice','Florence','Rome','Naples','Capri'].includes(todayTripDay?.city)?todayTripDay.city:'Venice';
+  let nearbyFilter='All',nearbySource='hotel',nearbyOrigin={...GUIDE_LOCATION_ANCHORS.hotels[activeNearbyCity]};
 
   qs('#guide').innerHTML=`
     <div class="section-title"><div><h2>Places & spending</h2><span class="small">Your personal city guide and trip expenses</span></div></div>
     <div class="guide-section-tabs">
       <button class="guide-section-tab active" data-guide-section="places">Places</button>
+      <button class="guide-section-tab" data-guide-section="nearby">Nearby</button>
       <button class="guide-section-tab" data-guide-section="spending">Spending</button>
     </div>
 
@@ -956,6 +1025,28 @@ function renderGuide(){
       </div>
       <div id="guidePlacesSummary"></div>
       <div id="guideCards"></div>
+    </section>
+
+
+    <section id="guideNearbySection" class="hidden">
+      <section class="nearby-hero">
+        <div class="focus-label">NEARBY GUIDE</div>
+        <h2>Best saved places around you</h2>
+        <p>See only your curated recommendations, sorted by approximate distance. Your live location is used temporarily and is never saved.</p>
+      </section>
+      <div class="nearby-source-grid">
+        <button class="primary" id="nearbyUseLocation">⌖ Use my location</button>
+        <button class="secondary" data-nearby-source="hotel">🏨 Near hotel</button>
+        <button class="secondary" data-nearby-source="plan">📅 Near today’s plan</button>
+      </div>
+      <div class="guide-tabs nearby-city-tabs">
+        ${cities.map(city=>`<button class="chip ${city===activeNearbyCity?'active':''}" data-nearby-city="${city}">${city}</button>`).join('')}
+      </div>
+      <div class="filters nearby-filter-tabs">
+        ${['All','Meals','Quick','Drinks','Official'].map((filter,i)=>`<button class="chip ${i===0?'active':''}" data-nearby-filter="${filter}">${filter}</button>`).join('')}
+      </div>
+      <div id="nearbyStatus" class="nearby-status" aria-live="polite"></div>
+      <div id="nearbyResults"></div>
     </section>
 
     <section id="guideSpendingSection" class="hidden">
@@ -1003,13 +1094,64 @@ function renderGuide(){
       </div>
     </div>`;
 
-  const placesSection=qs('#guidePlacesSection'), spendingSection=qs('#guideSpendingSection');
-  qsa('[data-guide-section]').forEach(button=>button.addEventListener('click',()=>{
-    activeSection=button.dataset.guideSection;
-    qsa('[data-guide-section]').forEach(x=>x.classList.toggle('active',x===button));
-    placesSection.classList.toggle('hidden',activeSection!=='places');
-    spendingSection.classList.toggle('hidden',activeSection!=='spending');
-  }));
+  const placesSection=qs('#guidePlacesSection'), nearbySection=qs('#guideNearbySection'), spendingSection=qs('#guideSpendingSection');
+  const selectGuideSection=section=>{
+    activeSection=section;
+    qsa('[data-guide-section]').forEach(x=>x.classList.toggle('active',x.dataset.guideSection===section));
+    placesSection.classList.toggle('hidden',section!=='places');
+    nearbySection.classList.toggle('hidden',section!=='nearby');
+    spendingSection.classList.toggle('hidden',section!=='spending');
+    if(section==='nearby')renderNearby();
+  };
+  qsa('[data-guide-section]').forEach(button=>button.addEventListener('click',()=>selectGuideSection(button.dataset.guideSection)));
+
+
+  const nearbyMatchesFilter=place=>{
+    if(nearbyFilter==='Official')return !!place.official;
+    if(nearbyFilter==='Meals')return ['Breakfast','Lunch','Dinner','Pizza'].includes(place.category);
+    if(nearbyFilter==='Quick')return ['Coffee','Gelato','Dessert','Small Bite'].includes(place.category);
+    if(nearbyFilter==='Drinks')return place.category==='Bar';
+    return true;
+  };
+  const nearbyDedupedPlaces=()=>{
+    const selected=guideLoad('guide-places',[]).filter(place=>place.city===activeNearbyCity&&nearbyMatchesFilter(place));
+    const unique=new Map();
+    selected.forEach(place=>{
+      const key=`${place.city}|${place.name}`;
+      const existing=unique.get(key);
+      if(!existing){unique.set(key,{...place,_categories:new Set([place.category]),_days:new Set(place.plannedDay?[place.plannedDay]:[])});return}
+      existing._categories.add(place.category);if(place.plannedDay)existing._days.add(place.plannedDay);
+      const currentScore=Number(existing.official)*100+Number(existing.favorite)*20+(10-(existing.rank||9));
+      const nextScore=Number(place.official)*100+Number(place.favorite)*20+(10-(place.rank||9));
+      if(nextScore>currentScore)Object.assign(existing,{...place,_categories:existing._categories,_days:existing._days});
+    });
+    return [...unique.values()];
+  };
+  const renderNearby=()=>{
+    const status=qs('#nearbyStatus'),results=qs('#nearbyResults');
+    if(!nearbyOrigin){status.innerHTML='<strong>Choose a starting point</strong><span>Use your location, hotel, or today’s plan.</span>';results.innerHTML='';return}
+    const sourceLabel=nearbyOrigin.label||(nearbySource==='current'?'Your current location':'Selected starting point');
+    const candidates=nearbyDedupedPlaces().map(place=>{const point=guideCoordinates(place);return point?{place,point,distance:guideDistanceKm(nearbyOrigin,point)}:null}).filter(Boolean).sort((a,b)=>a.distance-b.distance);
+    status.innerHTML=`<div><strong>Near ${escapeHTML(sourceLabel)}</strong><span>${escapeHTML(activeNearbyCity)} · approximate distance; Maps provides the exact route</span></div><span>${candidates.length} place${candidates.length===1?'':'s'}</span>`;
+    results.innerHTML=candidates.length?`<div class="nearby-list">${candidates.map((item,index)=>{
+      const p=item.place,categories=[...p._categories],days=[...p._days].sort();
+      return `<article class="nearby-card">
+        <div class="nearby-card-top"><div class="nearby-distance"><strong>${index+1}</strong><span>${escapeHTML(guideDistanceLabel(item.distance))}</span></div>${p.official?'<span class="nearby-official">Official Pick</span>':''}</div>
+        <div class="guide-place-kicker">${escapeHTML(p.city)} · ${categories.map(category=>`${foodCategoryIcon(category)} ${escapeHTML(category)}`).join(' · ')}</div>
+        <h3>${escapeHTML(p.name)}</h3>
+        <div class="food-place-meta">${p.price?`<span>💰 ${escapeHTML(p.price)}</span>`:''}${p.favorite?'<span>★ Favorite</span>':''}${p.worthDetour?`<span>⭐ Worth a Detour: ${escapeHTML(p.worthDetour)}</span>`:''}</div>
+        ${p.notes?`<p>${escapeHTML(p.notes)}</p>`:''}
+        ${p.dishes?.length?`<div class="nearby-dishes">${p.dishes.slice(0,3).map(dish=>`<span>${escapeHTML(dish)}</span>`).join('')}</div>`:''}
+        ${days.length?`<div class="nearby-days">Planned ${days.map(shortDate).join(' · ')}</div>`:''}
+        <div class="guide-place-actions nearby-actions"><a class="primary" href="${escapeHTML(guideDirectionsUrl(p,nearbyOrigin))}" target="_blank" rel="noopener">Walking directions</a><button class="secondary" data-nearby-view="${escapeHTML(p.id)}">View in Guide</button></div>
+      </article>`;
+    }).join('')}</div>`:`<div class="guide-empty"><strong>No nearby matches</strong><span>Try another filter or city.</span></div>`;
+    qsa('[data-nearby-view]').forEach(button=>button.addEventListener('click',()=>{
+      const place=guideLoad('guide-places',[]).find(item=>item.id===button.dataset.nearbyView);if(!place)return;
+      selectGuideSection('places');activeCity=place.city;qsa('[data-guide-city]').forEach(x=>x.classList.toggle('active',x.dataset.guideCity===activeCity));
+      placeSearch=place.name.toLowerCase();qs('#placeSearch').value=place.name;renderPlaces();
+    }));
+  };
 
   const renderPlaces=()=>{
     const places=guideLoad('guide-places',[]);
@@ -1074,6 +1216,31 @@ function renderGuide(){
     }));
     qsa('[data-edit-place]').forEach(btn=>btn.addEventListener('click',()=>openPlaceEditor(btn.dataset.editPlace)));
   };
+
+
+  qsa('[data-nearby-city]').forEach(button=>button.addEventListener('click',()=>{
+    activeNearbyCity=button.dataset.nearbyCity;qsa('[data-nearby-city]').forEach(x=>x.classList.toggle('active',x===button));
+    if(nearbySource!=='current')nearbyOrigin=nearbySource==='plan'?guidePlanOrigin(activeNearbyCity):{...GUIDE_LOCATION_ANCHORS.hotels[activeNearbyCity]};
+    renderNearby();
+  }));
+  qsa('[data-nearby-filter]').forEach(button=>button.addEventListener('click',()=>{
+    nearbyFilter=button.dataset.nearbyFilter;qsa('[data-nearby-filter]').forEach(x=>x.classList.toggle('active',x===button));renderNearby();
+  }));
+  qsa('[data-nearby-source]').forEach(button=>button.addEventListener('click',()=>{
+    nearbySource=button.dataset.nearbySource;nearbyOrigin=nearbySource==='plan'?guidePlanOrigin(activeNearbyCity):{...GUIDE_LOCATION_ANCHORS.hotels[activeNearbyCity]};renderNearby();
+  }));
+  qs('#nearbyUseLocation').addEventListener('click',()=>{
+    const status=qs('#nearbyStatus');
+    if(!navigator.geolocation){status.innerHTML='<strong>Location is not available</strong><span>Use Near hotel or Near today’s plan instead.</span>';return}
+    status.innerHTML='<strong>Finding your location…</strong><span>Your position is used only for this nearby list.</span>';
+    navigator.geolocation.getCurrentPosition(position=>{
+      nearbySource='current';nearbyOrigin={lat:position.coords.latitude,lng:position.coords.longitude,label:'your current location'};
+      activeNearbyCity=nearestGuideCity(nearbyOrigin);qsa('[data-nearby-city]').forEach(x=>x.classList.toggle('active',x.dataset.nearbyCity===activeNearbyCity));renderNearby();
+    },error=>{
+      const message=error.code===1?'Location permission was denied.':'Your location could not be determined.';
+      status.innerHTML=`<strong>${message}</strong><span>Use Near hotel or Near today’s plan instead.</span>`;
+    },{enableHighAccuracy:true,timeout:12000,maximumAge:300000});
+  });
 
   qsa('[data-guide-city]').forEach(btn=>btn.addEventListener('click',()=>{
     activeCity=btn.dataset.guideCity;qsa('[data-guide-city]').forEach(x=>x.classList.toggle('active',x===btn));renderPlaces();
