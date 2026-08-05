@@ -40,6 +40,6 @@ window.CITY_GUIDE = {
 {type:"Top 5",name:"If You Only Do Five Food Things",note:"Armando al Pantheon · Tonnarello · Supplizio · Giolitti · Roscioli."},
 {type:"Skip List",name:"Avoid tourist traps",note:"Avoid tourist menus near Pantheon/Trevi and long waits over 45 min at Tonnarello or Da Enzo."}
 ],
- Naples:[{type:"Sep 24 Lunch",name:"L’Antica Pizzeria da Michele ⭐⭐⭐⭐⭐",note:"Official Pick · Margherita · Marinara · Skip if wait exceeds 45–60 min."},{type:"Sep 24 Dinner",name:"Trattoria da Nennella ⭐⭐⭐⭐⭐",note:"Official Pick · Genovese Pasta · Meatballs."},{type:"Sep 25 Dinner",name:"Gino e Toto Sorbillo ⭐⭐⭐⭐⭐",note:"Official Pick · Margherita · Diavola."},{type:"Sep 26 Dinner",name:"Mimì alla Ferrovia ⭐⭐⭐⭐⭐",note:"Official Pick · Farewell dinner."},{type:"Top 5",name:"If You Only Do Five Food Things",note:"Da Michele · Zia Esterina · Sfogliatella Mary · Verginiello · Mimì alla Ferrovia."},{type:"Skip List",name:"Avoid tourist traps",note:"Skip long waits at Da Michele and cruise-terminal tourist menus."}],
- Capri:[{type:"Sep 25 Lunch",name:"Ristorante Verginiello ⭐⭐⭐⭐⭐",note:"Official Pick · Seafood Pasta · Caprese Salad."},{type:"Coffee",name:"Bar Grotta Azzurra",note:"Espresso · Lemon Granita."},{type:"Sweet Stop",name:"Lemon Granita",note:"Classic Capri refreshment."}]
+ Naples:[{type:"Pizza",name:"Add your Naples pizza pick",note:"For arrival day."},{type:"Final dinner",name:"Add your final-night restaurant",note:"For September 26."}],
+ Capri:[{type:"Lunch",name:"Add a quick Capri lunch",note:"Must fit before 1:45 PM boat-tour check-in."},{type:"Gelato",name:"Add a Marina Grande option",note:"For after the boat tour."}]
 };
