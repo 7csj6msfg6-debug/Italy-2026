@@ -1,4 +1,4 @@
-const CACHE='italy-2026-navigation-state-v1';
+const CACHE='italy-2026-navigation-state-v2';
 const FILES=['./','./index.html','./style.css','./app.js','./navigation-state.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)))});
 self.addEventListener('activate',event=>event.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))])));
