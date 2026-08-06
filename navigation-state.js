@@ -1,6 +1,7 @@
 (() => {
-  const STORAGE_PREFIX = "italy2026-navigation-v1-";
-  const validViews = new Set([...document.querySelectorAll(".view")].map(view => view.id));
+  const STORAGE_PREFIX = "italy2026-navigation-v2-";
+  const views = [...document.querySelectorAll(".view")];
+  const validViews = new Set(views.map(view => view.id));
   const primaryTabs = new Set(["home", "trip", "wallet", "guide", "more"]);
   const parentTabs = {
     route: "trip",
@@ -52,28 +53,11 @@
     if (date) write("trip-day", date);
   }
 
-  function saveCurrentPosition() {
-    const view = currentView();
-    write(`scroll-${view}`, Math.max(0, Math.round(window.scrollY)));
+  function savePosition(view = currentView(), top = window.scrollY) {
+    write(`scroll-${view}`, Math.max(0, Math.round(top)));
     write("last-view", view);
     if (view === "guide") saveGuideSelections();
     if (view === "trip") saveTripSelections();
-  }
-
-  let restoringScroll = false;
-  function restoreScroll(view) {
-    const saved = Number(read(`scroll-${view}`, "0"));
-    const top = Number.isFinite(saved) && saved > 0 ? saved : 0;
-    restoringScroll = true;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top, left: 0, behavior: "auto" });
-        setTimeout(() => {
-          window.scrollTo({ top, left: 0, behavior: "auto" });
-          restoringScroll = false;
-        }, 80);
-      });
-    });
   }
 
   function syncPrimaryTab(view) {
@@ -108,24 +92,47 @@
     cards.forEach(card => card.classList.toggle("open", card === target));
   }
 
-  const originalShowView = window.showView;
-  if (typeof originalShowView !== "function") return;
+  let restoringScroll = false;
+  let restoreToken = 0;
+  function restoreScroll(view) {
+    const saved = Number(read(`scroll-${view}`, "0"));
+    const top = Number.isFinite(saved) && saved > 0 ? saved : 0;
+    const token = ++restoreToken;
+    restoringScroll = true;
 
-  let handlingHistory = false;
-  window.showView = function showViewWithMemory(target, updateTab = true) {
-    if (!validViews.has(target)) return;
-    const previous = currentView();
-    if (previous !== target) saveCurrentPosition();
+    [0, 60, 160, 320, 550].forEach((delay, index, list) => {
+      setTimeout(() => {
+        if (token !== restoreToken || currentView() !== view) return;
+        window.scrollTo({ top, left: 0, behavior: "auto" });
+        if (index === list.length - 1) restoringScroll = false;
+      }, delay);
+    });
+  }
 
-    originalShowView(target, updateTab);
-    syncPrimaryTab(target);
-    write("last-view", target);
+  function restoreView(view) {
+    if (view === "guide") restoreGuideState();
+    if (view === "trip") restoreTripState();
+    syncPrimaryTab(view);
+    write("last-view", view);
+    restoreScroll(view);
+  }
 
-    if (!handlingHistory && previous !== target) {
-      history.pushState({ italyView: target }, "");
-    }
-    restoreScroll(target);
-  };
+  let scrollSaveTimer = 0;
+  window.addEventListener("scroll", () => {
+    if (restoringScroll) return;
+    const view = currentView();
+    const top = window.scrollY;
+    clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = setTimeout(() => savePosition(view, top), 100);
+  }, { passive: true });
+
+  document.addEventListener("pointerdown", event => {
+    const navigation = event.target.closest(".tab, [data-jump], [data-open], [data-back]");
+    if (!navigation) return;
+    clearTimeout(scrollSaveTimer);
+    savePosition(currentView(), window.scrollY);
+    restoringScroll = true;
+  }, true);
 
   document.addEventListener("click", event => {
     const section = event.target.closest("[data-guide-section]");
@@ -160,40 +167,62 @@
     }
   });
 
-  let scrollSaveTimer = 0;
-  window.addEventListener("scroll", () => {
-    if (restoringScroll) return;
-    clearTimeout(scrollSaveTimer);
-    scrollSaveTimer = setTimeout(saveCurrentPosition, 120);
-  }, { passive: true });
-
-  window.addEventListener("pagehide", saveCurrentPosition);
-  window.addEventListener("beforeunload", saveCurrentPosition);
-
-  window.addEventListener("popstate", event => {
-    const target = event.state?.italyView;
-    if (!validViews.has(target)) return;
-    handlingHistory = true;
-    window.showView(target, true);
-    handlingHistory = false;
+  let lastVisibleView = currentView();
+  const viewObserver = new MutationObserver(() => {
+    const visible = currentView();
+    if (visible === lastVisibleView) return;
+    lastVisibleView = visible;
+    restoreView(visible);
   });
+  views.forEach(view => viewObserver.observe(view, { attributes: true, attributeFilter: ["class"] }));
 
-  const tripObserver = document.querySelector("#trip");
-  if (tripObserver) {
-    new MutationObserver(() => setTimeout(restoreTripState, 0))
-      .observe(tripObserver, { childList: true });
+  const tripHost = document.querySelector("#trip");
+  if (tripHost) {
+    new MutationObserver(() => {
+      if (currentView() === "trip") {
+        restoreTripState();
+        restoreScroll("trip");
+      }
+    }).observe(tripHost, { childList: true });
+  }
+
+  window.addEventListener("pagehide", () => savePosition(currentView(), window.scrollY));
+  window.addEventListener("beforeunload", () => savePosition(currentView(), window.scrollY));
+
+  const originalShowView = window.showView;
+  if (typeof originalShowView === "function") {
+    let handlingHistory = false;
+    window.showView = function showViewWithHistory(target, updateTab = true) {
+      if (!validViews.has(target)) return;
+      const previous = currentView();
+      if (previous !== target) {
+        clearTimeout(scrollSaveTimer);
+        savePosition(previous, window.scrollY);
+        restoringScroll = true;
+      }
+      originalShowView(target, updateTab);
+      syncPrimaryTab(target);
+      if (!handlingHistory && previous !== target) history.pushState({ italyView: target }, "");
+    };
+
+    window.addEventListener("popstate", event => {
+      const target = event.state?.italyView;
+      if (!validViews.has(target)) return;
+      handlingHistory = true;
+      window.showView(target, true);
+      handlingHistory = false;
+    });
   }
 
   restoreGuideState();
   restoreTripState();
 
-  const initialView = validViews.has(read("last-view", "")) ? read("last-view") : "home";
+  const savedView = read("last-view", "home");
+  const initialView = validViews.has(savedView) ? savedView : "home";
   history.replaceState({ italyView: initialView }, "");
-  handlingHistory = true;
-  if (currentView() !== initialView) window.showView(initialView, true);
-  else {
-    syncPrimaryTab(initialView);
-    restoreScroll(initialView);
+  if (currentView() !== initialView && typeof window.showView === "function") {
+    window.showView(initialView, true);
+  } else {
+    restoreView(initialView);
   }
-  handlingHistory = false;
 })();
