@@ -56,7 +56,7 @@ function getImportedTicket(id){
 
 const qs = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
-const todayISO = () => new Date().toISOString().slice(0,10);
+const todayISO = (date = new Date()) => [date.getFullYear(), String(date.getMonth()+1).padStart(2,"0"), String(date.getDate()).padStart(2,"0")].join("-");
 const fmtDate = s => new Date(s+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
 const shortDate = s => new Date(s+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"});
 
