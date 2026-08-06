@@ -1186,6 +1186,7 @@ function renderGuide(){
       const companionName=activeCity==='Naples'?'Naples & Capri':activeCity;
       const extras=CITY_FOOD_EXTRAS[activeCity];
       const dated=sorted.filter(p=>p.plannedDay).sort((a,b)=>a.plannedDay.localeCompare(b.plannedDay)||foodCategoryOrder(a.category)-foodCategoryOrder(b.category)||(a.rank||9)-(b.rank||9));
+      const unscheduled=sorted.filter(p=>!p.plannedDay).sort((a,b)=>foodCategoryOrder(a.category)-foodCategoryOrder(b.category)||a.name.localeCompare(b.name));
       const days=[...new Set(dated.map(p=>p.plannedDay))];
       const dayTitle=date=>({
         '2026-09-15':'Arrival Day','2026-09-16':'Tour Day','2026-09-17':'Arrival Day','2026-09-18':'Museum Day','2026-09-19':'Pisa & Wine Tour','2026-09-20':'Arrival Day','2026-09-21':'Colosseum Day','2026-09-22':'Vatican Day','2026-09-23':'Final Rome Day','2026-09-24':'Arrival Day','2026-09-25':'Capri Day','2026-09-26':'Pompeii & Mount Vesuvius'
@@ -1197,6 +1198,7 @@ function renderGuide(){
           const ordered=Object.keys(grouped).sort((a,b)=>foodCategoryOrder(a)-foodCategoryOrder(b));
           return `<section class="food-day-section"><div class="food-day-heading"><div><span>📅</span><div><small>${shortDate(date)}</small><h3>${dayTitle(date)}</h3></div></div></div>${ordered.map(category=>`<details class="food-category-section" open><summary><span>${foodCategoryIcon(category)}</span><strong>${grouped[category][0].mealWindow?.split(' · ')[0]||category}</strong><small>${grouped[category].length} choice${grouped[category].length===1?'':'s'}</small><b>⌄</b></summary><div class="food-category-cards">${grouped[category].sort((a,b)=>(a.rank||9)-(b.rank||9)).map(placeCard).join('')}</div></details>`).join('')}</section>`;
         }).join('')}</div>
+        ${unscheduled.length?`<section class="food-day-section food-unscheduled-section"><div class="food-day-heading"><div><span>📌</span><div><small>Saved for ${escapeHTML(companionName)}</small><h3>Unscheduled places</h3></div></div><span class="food-unscheduled-count">${unscheduled.length}</span></div><p class="food-unscheduled-note">These places are saved but do not have a planned day yet. Edit a place to add it to a specific date.</p><div class="food-category-cards">${unscheduled.map(placeCard).join('')}</div></section>`:''}
         <section class="food-companion-box"><h3>🏆 ${companionName} Signature Experiences</h3>${extras.signatures.map(x=>`<div>${escapeHTML(x)}</div>`).join('')}</section>
         <section class="food-companion-box skip"><h3>🚫 ${companionName} Skip List</h3>${extras.skip.map(x=>`<div>❌ ${escapeHTML(x)}</div>`).join('')}</section>
         <section class="food-passport"><div class="food-passport-head"><span>⭐</span><div><h3>If You Only Do Five Food Things</h3><small>Your essential ${companionName} food list</small></div></div>${extras.five.map((item,i)=>`<label class="food-passport-item"><input type="checkbox" data-food-bucket="${escapeHTML(item)}" ${bucket[item]?'checked':''}><span><b>${i+1}.</b> ${escapeHTML(item)}</span></label>`).join('')}</section>`;
