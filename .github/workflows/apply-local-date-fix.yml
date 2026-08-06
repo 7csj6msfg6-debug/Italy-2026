@@ -1,0 +1,48 @@
+name: Apply local date handling fix
+
+on:
+  push:
+    branches:
+      - agent/fix-local-date-handling
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-local-date-handling
+          fetch-depth: 0
+
+      - name: Replace UTC date helper
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("app.js")
+          text = path.read_text(encoding="utf-8")
+          old = 'const todayISO = () => new Date().toISOString().slice(0,10);'
+          new = 'const todayISO = (date = new Date()) => [date.getFullYear(), String(date.getMonth()+1).padStart(2,"0"), String(date.getDate()).padStart(2,"0")].join("-");'
+
+          if old not in text:
+              raise SystemExit("Expected UTC date helper was not found; no files changed.")
+
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+
+      - name: Validate JavaScript
+        run: node --check app.js
+
+      - name: Commit focused fix
+        run: |
+          rm .github/workflows/apply-local-date-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix local date handling"
+          git push origin HEAD:agent/fix-local-date-handling
