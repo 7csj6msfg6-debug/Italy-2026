@@ -1,0 +1,53 @@
+name: Apply Rome itinerary update
+
+on:
+  push:
+    branches:
+      - agent/add-rome-big-bus-booking
+
+permissions:
+  contents: write
+
+jobs:
+  update-itinerary:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/add-rome-big-bus-booking
+          fetch-depth: 0
+
+      - name: Add Rome itinerary entries
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('trip-data.js')
+          s = p.read_text(encoding='utf-8')
+
+          sep20_old = '''{"time": "Afternoon", "title": "Historic-center walking route", "note": "Largo di Torre Argentina • Pantheon • Piazza Navona • Campo de’ Fiori.", "map": "https://www.google.com/maps/dir/?api=1&origin=Largo+di+Torre+Argentina&destination=Campo+de%27+Fiori&waypoints=Pantheon+Rome%7CPiazza+Navona"}, {"time": "Evening", "title": "Dinner and Trevi Fountain at night"'''
+          sep20_new = '''{"time": "Afternoon", "title": "Historic-center walking route", "note": "Largo di Torre Argentina • Pantheon • Piazza Navona • Campo de’ Fiori.", "map": "https://www.google.com/maps/dir/?api=1&origin=Largo+di+Torre+Argentina&destination=Campo+de%27+Fiori&waypoints=Pantheon+Rome%7CPiazza+Navona"}, {"time": "Late afternoon / early evening", "title": "🥂 Complimentary Proseccos at Angie’s", "note": "Stop at Angie’s Restaurant, Piazza Mignanelli 21a near Piazza di Spagna. Your Big Bus booking includes 2 complimentary glasses of Prosecco total (one per ticket), redeemable from 10:00 AM–10:00 PM. Treat this as a quick aperitivo stop; keep your Rome Food Companion meal plans separate.", "status": "Booked", "map": "https://www.google.com/maps/search/?api=1&query=Angie%27s+Restaurant+Piazza+Mignanelli+21a+Rome"}, {"time": "Evening", "title": "Dinner and Trevi Fountain at night"'''
+
+          sep21_old = '''{"time": "Evening", "title": "Dinner", "note": "Keep the evening flexible after a full archaeological day."}]}'''
+          sep21_new = '''{"time": "Evening", "title": "Dinner", "note": "Keep dinner flexible and plan around the booked night tour."}, {"time": "8:00 PM", "title": "Arrive at Big Bus Stop #1 — Termini", "note": "Head to Bus Stop #1 at Termini Railway Station and aim to arrive about 20 minutes before departure.", "map": "https://www.google.com/maps/search/?api=1&query=Roma+Termini+Railway+Station"}, {"time": "8:20 PM", "title": "🌙 Big Bus Rome Panoramic Night Tour", "note": "Booked non-stop panoramic night tour of illuminated Rome. Approximately 1 hour.", "status": "Booked"}]}'''
+
+          if sep20_old not in s:
+              raise SystemExit('September 20 insertion point not found')
+          s = s.replace(sep20_old, sep20_new, 1)
+          if sep21_old not in s:
+              raise SystemExit('September 21 insertion point not found')
+          s = s.replace(sep21_old, sep21_new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate itinerary JavaScript
+        run: node --check trip-data.js
+
+      - name: Commit itinerary update and remove helper workflow
+        run: |
+          rm .github/workflows/apply-rome-itinerary-update.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add trip-data.js .github/workflows/apply-rome-itinerary-update.yml
+          git commit -m "Add Rome Prosecco stop and night tour"
+          git push origin HEAD:agent/add-rome-big-bus-booking
