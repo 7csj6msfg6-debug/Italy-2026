@@ -1,4 +1,4 @@
-const CACHE = 'italy-2026-app-v4';
+const CACHE = 'italy-2026-app-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -16,8 +16,13 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting();
+  // Keep a newly downloaded build waiting until the user chooses Refresh.
+  // This avoids swapping app code underneath an active trip session.
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)));
+});
+
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
