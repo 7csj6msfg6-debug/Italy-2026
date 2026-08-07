@@ -23,7 +23,8 @@
       const map = new Map();
       tickets.forEach(ticket => {
         if (!ticket.linkedWalletKey) return;
-        map.set(ticket.linkedWalletKey, (map.get(ticket.linkedWalletKey) || 0) + 1);
+        if (!map.has(ticket.linkedWalletKey)) map.set(ticket.linkedWalletKey, []);
+        map.get(ticket.linkedWalletKey).push(ticket);
       });
       return map;
     } catch (error) {
@@ -35,7 +36,7 @@
   function decorateWallet(map) {
     document.querySelectorAll("#wallet [data-wallet-key]").forEach(card => {
       const key = card.dataset.walletKey;
-      const count = map.get(key) || 0;
+      const count = map.get(key)?.length || 0;
       let status = card.querySelector(".wallet-attachment-status");
       if (!status) {
         status = document.createElement("span");
@@ -62,6 +63,7 @@
     document.querySelectorAll("#home .today-ticket-confidence").forEach(node => node.remove());
     if (!button) return;
 
+    delete button.dataset.directTicketId;
     const day = selectedDay();
     const index = Number(button.dataset.homeWallet);
     const event = day?.events?.[index];
@@ -71,16 +73,53 @@
     }
 
     const match = window.findWalletMatchForEvent(day, event);
-    const hasAttachment = Boolean(match?.key && map.get(match.key));
-    button.textContent = hasAttachment ? "Open ticket" : "Open Wallet";
+    const files = match?.key ? (map.get(match.key) || []) : [];
+    const count = files.length;
+
+    if (count === 1) {
+      button.textContent = "Open ticket";
+      button.dataset.directTicketId = files[0].id;
+    } else if (count > 1) {
+      button.textContent = "Open tickets";
+    } else {
+      button.textContent = "Open Wallet";
+    }
 
     const actions = button.closest(".today-primary-actions");
     if (!actions || !match) return;
     const note = document.createElement("div");
     note.className = "today-ticket-confidence";
-    note.textContent = hasAttachment ? "Private ticket attached ✓" : "Reservation found · no private ticket attached";
+    note.textContent = count === 1
+      ? "Private ticket attached ✓"
+      : count > 1
+        ? `${count} private tickets attached`
+        : "Reservation found · no private ticket attached";
     actions.insertAdjacentElement("afterend", note);
   }
+
+  async function openDirectTicket(id) {
+    const popup = window.open("", "_blank");
+    try {
+      if (typeof window.getImportedTicket !== "function") throw new Error("Ticket reader unavailable");
+      const ticket = await window.getImportedTicket(id);
+      if (!ticket?.blob) throw new Error("Ticket not found");
+      const url = URL.createObjectURL(ticket.blob);
+      if (popup) popup.location = url;
+      else window.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
+    } catch (error) {
+      if (popup) popup.close();
+      alert("This ticket could not be opened.");
+    }
+  }
+
+  document.addEventListener("click", event => {
+    const button = event.target.closest("#home [data-home-wallet][data-direct-ticket-id]");
+    if (!button) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openDirectTicket(button.dataset.directTicketId);
+  }, true);
 
   async function run() {
     scheduled = false;
