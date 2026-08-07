@@ -77,6 +77,7 @@
     const title=row.querySelector(".today-event-title")?.textContent?.trim()||"";
     const note=row.querySelector(".today-event-note")?.textContent?.trim()||"";
     const eventBadge=row.querySelector(".badge");
+    const mapHref=row.querySelector(".today-event-actions a")?.getAttribute("href")||"";
     const label=mode==="current"?"CURRENT STOP":mode==="preview"?"FIRST UNFINISHED STOP":"UP NEXT";
 
     const labelNode=card.querySelector(".focus-label");
@@ -102,6 +103,23 @@
     }
 
     const actions=card.querySelector(".today-primary-actions");
+    if(actions){
+      let mapButton=actions.querySelector("a.primary");
+      if(mapHref){
+        if(!mapButton){
+          mapButton=document.createElement("a");
+          mapButton.className="primary";
+          mapButton.target="_blank";
+          mapButton.rel="noopener";
+          mapButton.textContent="Open Maps";
+          actions.prepend(mapButton);
+        }
+        mapButton.href=mapHref;
+      }else{
+        mapButton?.remove();
+      }
+    }
+
     const walletButton=actions?.querySelector("[data-home-wallet]");
     if(walletButton)walletButton.dataset.homeWallet=String(index);
 
@@ -122,12 +140,19 @@
       };
     }
 
-    const existingBadge=card.querySelector(".badge");
-    if(existingBadge&&eventBadge){
-      existingBadge.className=eventBadge.className;
-      existingBadge.textContent=eventBadge.textContent;
-    }else if(existingBadge&&!eventBadge){
-      existingBadge.remove();
+    let existingBadge=card.querySelector(".badge");
+    if(eventBadge){
+      if(!existingBadge){
+        existingBadge=document.createElement("span");
+        const noteNode=card.querySelector(".today-next-note");
+        if(noteNode)noteNode.insertAdjacentElement("afterend",existingBadge);
+      }
+      if(existingBadge){
+        existingBadge.className=eventBadge.className;
+        existingBadge.textContent=eventBadge.textContent;
+      }
+    }else{
+      existingBadge?.remove();
     }
   }
 
