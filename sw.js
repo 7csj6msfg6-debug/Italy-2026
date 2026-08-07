@@ -1,4 +1,4 @@
-const CACHE = 'italy-2026-app-v6';
+const CACHE = 'italy-2026-app-v7';
 const APP_SHELL = [
   './',
   './index.html',
@@ -16,14 +16,10 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  // One-time migration release: automatically take control so Home Screen
-  // installs that were stranded on the pre-update-flow build can move forward.
+  // Automatically activate new deployments once iOS detects them.
+  // No in-app Refresh action is required.
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)));
-});
-
-self.addEventListener('message', event => {
-  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
