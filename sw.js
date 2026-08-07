@@ -1,4 +1,4 @@
-const CACHE = 'italy-2026-app-v11';
+const CACHE = 'italy-2026-app-v12';
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const APP_SHELL = [
   './today-polish.js',
   './wallet-polish.js',
   './wallet-reliability.js',
+  './today-ticket-actions.js',
   './app-status.js',
   './trip-data.js',
   './manifest.webmanifest',
