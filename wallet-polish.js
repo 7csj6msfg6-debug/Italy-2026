@@ -3,6 +3,8 @@
 
   let scheduled = false;
   let runToken = 0;
+  const originalRenderHome = window.renderHome;
+  const originalRenderWallet = window.renderWallet;
 
   function ensureStyles() {
     if (document.getElementById("wallet-polish-styles")) return;
@@ -47,9 +49,10 @@
       if (!status) return;
       status.classList.toggle("attached", count > 0);
       status.classList.toggle("missing", count === 0);
-      status.textContent = count > 0
+      const label = count > 0
         ? `Ticket attached ✓${count > 1 ? ` · ${count} files` : ""}`
         : "No private ticket";
+      if (status.textContent !== label) status.textContent = label;
     });
   }
 
@@ -60,7 +63,6 @@
 
   function decorateToday(map) {
     const button = document.querySelector("#home [data-home-wallet]");
-    document.querySelectorAll("#home .today-ticket-confidence").forEach(node => node.remove());
     if (!button) return;
 
     delete button.dataset.directTicketId;
@@ -69,6 +71,7 @@
     const event = day?.events?.[index];
     if (!day || !event || typeof window.findWalletMatchForEvent !== "function") {
       button.textContent = "Open Wallet";
+      document.querySelector("#home .today-ticket-confidence")?.remove();
       return;
     }
 
@@ -86,15 +89,23 @@
     }
 
     const actions = button.closest(".today-primary-actions");
-    if (!actions || !match) return;
-    const note = document.createElement("div");
-    note.className = "today-ticket-confidence";
-    note.textContent = count === 1
+    if (!actions || !match) {
+      document.querySelector("#home .today-ticket-confidence")?.remove();
+      return;
+    }
+
+    const label = count === 1
       ? "Private ticket attached ✓"
       : count > 1
         ? `${count} private tickets attached`
         : "Reservation found · no private ticket attached";
-    actions.insertAdjacentElement("afterend", note);
+    let note = document.querySelector("#home .today-ticket-confidence");
+    if (!note) {
+      note = document.createElement("div");
+      note.className = "today-ticket-confidence";
+      actions.insertAdjacentElement("afterend", note);
+    }
+    if (note.textContent !== label) note.textContent = label;
   }
 
   async function openDirectTicket(id) {
@@ -137,11 +148,27 @@
     requestAnimationFrame(run);
   }
 
-  const wallet = document.getElementById("wallet");
-  const home = document.getElementById("home");
-  if (wallet) new MutationObserver(schedule).observe(wallet, { childList: true, subtree: true });
-  if (home) new MutationObserver(schedule).observe(home, { childList: true, subtree: true });
+  if (typeof originalRenderHome === "function") {
+    window.renderHome = function(...args) {
+      const result = originalRenderHome.apply(this, args);
+      schedule();
+      return result;
+    };
+  }
 
+  if (typeof originalRenderWallet === "function") {
+    window.renderWallet = async function(...args) {
+      const result = await originalRenderWallet.apply(this, args);
+      schedule();
+      return result;
+    };
+  }
+
+  document.addEventListener("click", event => {
+    if (event.target.closest('[data-target="home"], [data-target="wallet"], [data-jump="wallet"]')) {
+      setTimeout(schedule, 0);
+    }
+  });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") schedule();
   });
