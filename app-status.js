@@ -18,6 +18,13 @@
     document.head.appendChild(style);
   }
 
+  function removeLegacyOfflineCard(more) {
+    more.querySelectorAll('.info-card').forEach(card => {
+      const heading = card.querySelector('strong')?.textContent?.trim().toLowerCase();
+      if (heading === 'offline-ready' || heading === 'offline ready') card.remove();
+    });
+  }
+
   async function offlineState() {
     if (!('serviceWorker' in navigator) || !('caches' in window)) return { label: 'Unavailable', ready: false };
     try {
@@ -34,6 +41,7 @@
     ensureStyles();
     const more = document.getElementById('more');
     if (!more || more.classList.contains('hidden')) return;
+    removeLegacyOfflineCard(more);
     let card = more.querySelector('.app-status-card');
     if (!card) {
       card = document.createElement('section');
