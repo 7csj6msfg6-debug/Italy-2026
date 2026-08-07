@@ -1,6 +1,6 @@
 (() => {
-  const BUILD = '2026.08.06.2';
-  const EXPECTED_CACHE = 'italy-2026-app-v5';
+  const BUILD = '2026.08.07.1';
+  const EXPECTED_CACHE = 'italy-2026-app-v6';
   let waitingWorker = null;
   let reloadingForUpdate = false;
 
