@@ -1,6 +1,6 @@
 (() => {
   const BUILD = '2026.08.06.1';
-  const EXPECTED_CACHE = 'italy-2026-app-v3';
+  const EXPECTED_CACHE = 'italy-2026-app-v4';
 
   function ensureStyles() {
     if (document.getElementById('app-status-styles')) return;
@@ -19,16 +19,12 @@
   }
 
   async function offlineState() {
-    if (!('serviceWorker' in navigator) || !('caches' in window)) {
-      return { label: 'Unavailable', ready: false };
-    }
+    if (!('serviceWorker' in navigator) || !('caches' in window)) return { label: 'Unavailable', ready: false };
     try {
       const registration = await navigator.serviceWorker.ready;
       const keys = await caches.keys();
       const ready = Boolean(registration.active && keys.includes(EXPECTED_CACHE));
-      return ready
-        ? { label: 'Offline ready ✓', ready: true }
-        : { label: 'Preparing offline…', ready: false };
+      return ready ? { label: 'Offline ready ✓', ready: true } : { label: 'Preparing offline…', ready: false };
     } catch {
       return { label: 'Offline status unavailable', ready: false };
     }
@@ -38,18 +34,13 @@
     ensureStyles();
     const more = document.getElementById('more');
     if (!more || more.classList.contains('hidden')) return;
-
     let card = more.querySelector('.app-status-card');
     if (!card) {
       card = document.createElement('section');
       card.className = 'app-status-card';
       more.appendChild(card);
     }
-
-    card.innerHTML = `
-      <div class="app-status-row"><span class="app-status-label">Offline</span><span class="app-status-value waiting">Checking…</span></div>
-      <div class="app-status-row"><span class="app-status-label">App version</span><span class="app-status-value">${BUILD}</span></div>`;
-
+    card.innerHTML = `<div class="app-status-row"><span class="app-status-label">Offline</span><span class="app-status-value waiting">Checking…</span></div><div class="app-status-row"><span class="app-status-label">App version</span><span class="app-status-value">${BUILD}</span></div>`;
     const state = await offlineState();
     if (!card.isConnected) return;
     const value = card.querySelector('.app-status-value');
@@ -59,15 +50,8 @@
   }
 
   const more = document.getElementById('more');
-  if (more) {
-    new MutationObserver(() => {
-      if (!more.classList.contains('hidden')) requestAnimationFrame(renderStatus);
-    }).observe(more, { attributes: true, attributeFilter: ['class'], childList: true });
-  }
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') renderStatus();
-  });
+  if (more) new MutationObserver(() => { if (!more.classList.contains('hidden')) requestAnimationFrame(renderStatus); }).observe(more, { attributes: true, attributeFilter: ['class'], childList: true });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') renderStatus(); });
   window.addEventListener('online', renderStatus);
   window.addEventListener('offline', renderStatus);
   navigator.serviceWorker?.addEventListener('controllerchange', renderStatus);
