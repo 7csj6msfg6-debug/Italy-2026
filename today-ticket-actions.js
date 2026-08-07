@@ -3,6 +3,7 @@
 
   let scheduled = false;
   let runToken = 0;
+  const originalRenderHome = window.renderHome;
 
   function ensureStyles() {
     if (document.getElementById("today-ticket-actions-styles")) return;
@@ -52,19 +53,32 @@
     if (!day || typeof window.findWalletMatchForEvent !== "function") return;
 
     rows.forEach((row, index) => {
-      row.querySelectorAll(".today-schedule-ticket").forEach(button => button.remove());
       const event = day.events?.[index];
       const actions = row.querySelector(".today-event-actions");
       if (!event || !actions) return;
 
       const match = window.findWalletMatchForEvent(day, event);
       const files = match?.key ? (map.get(match.key) || []) : [];
-      if (!files.length) return;
+      let button = row.querySelector(".today-schedule-ticket");
 
-      const button = document.createElement("button");
+      if (!files.length) {
+        button?.remove();
+        return;
+      }
+
+      const label = files.length === 1 ? "Ticket" : `Tickets (${files.length})`;
+      const signature = files.map(file => file.id).join("|");
+      if (button && button.dataset.ticketSignature === signature) {
+        button.textContent = label;
+        return;
+      }
+
+      button?.remove();
+      button = document.createElement("button");
       button.type = "button";
       button.className = "today-schedule-ticket";
-      button.textContent = files.length === 1 ? "Ticket" : `Tickets (${files.length})`;
+      button.textContent = label;
+      button.dataset.ticketSignature = signature;
       button.setAttribute("aria-label", files.length === 1 ? `Open ticket for ${event.title}` : `Open ${files.length} tickets for ${event.title}`);
 
       if (files.length === 1) {
@@ -98,8 +112,14 @@
     requestAnimationFrame(run);
   }
 
-  const home = document.getElementById("home");
-  if (home) new MutationObserver(schedule).observe(home, { childList: true, subtree: true });
+  if (typeof originalRenderHome === "function") {
+    window.renderHome = function(...args) {
+      const result = originalRenderHome.apply(this, args);
+      schedule();
+      return result;
+    };
+  }
+
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") schedule();
   });
