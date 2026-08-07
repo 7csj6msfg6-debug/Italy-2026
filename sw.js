@@ -1,4 +1,4 @@
-const CACHE = 'italy-2026-app-v5';
+const CACHE = 'italy-2026-app-v6';
 const APP_SHELL = [
   './',
   './index.html',
@@ -16,8 +16,9 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  // Keep a newly downloaded build waiting until the user chooses Refresh.
-  // This avoids swapping app code underneath an active trip session.
+  // One-time migration release: automatically take control so Home Screen
+  // installs that were stranded on the pre-update-flow build can move forward.
+  self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)));
 });
 
