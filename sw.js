@@ -1,4 +1,4 @@
-const CACHE = 'italy-2026-app-v3';
+const CACHE = 'italy-2026-app-v4';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const APP_SHELL = [
   './history-aware-back.js',
   './today-polish.js',
   './wallet-polish.js',
+  './app-status.js',
   './trip-data.js',
   './manifest.webmanifest',
   './icon-192.png',
@@ -32,13 +33,8 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-
-  // External requests such as weather, exchange rates and Maps should stay
-  // network-driven instead of filling the app cache with transient responses.
   if (url.origin !== self.location.origin) return;
 
-  // For page navigation, prefer the freshest deployed HTML when online and
-  // fall back to the cached app shell when the connection is unavailable.
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
@@ -57,8 +53,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Same-origin app assets use stale-while-revalidate: cached files appear
-  // immediately offline/online while a fresh copy is stored for the next load.
   event.respondWith((async () => {
     const cached = await caches.match(request);
     const network = fetch(request).then(async response => {
