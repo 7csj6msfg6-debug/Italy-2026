@@ -1,4 +1,4 @@
-const CACHE = 'italy-2026-app-v7';
+const CACHE = 'italy-2026-app-v8';
 const APP_SHELL = [
   './',
   './index.html',
