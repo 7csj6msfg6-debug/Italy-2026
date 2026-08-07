@@ -1,6 +1,6 @@
 (() => {
-  const BUILD = '2026.08.07.5';
-  const EXPECTED_CACHE = 'italy-2026-app-v10';
+  const BUILD = '2026.08.07.6';
+  const EXPECTED_CACHE = 'italy-2026-app-v11';
 
   function ensureStyles() {
     if (document.getElementById('app-status-styles')) return;
