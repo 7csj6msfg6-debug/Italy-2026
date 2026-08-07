@@ -219,9 +219,17 @@
 
   const savedView = read("last-view", "home");
   const initialView = validViews.has(savedView) ? savedView : "home";
+  const visibleAtLaunch = currentView();
+
+  // Seed browser history with the restored destination before changing views.
+  // Suppress pushState during this one-time restoration so reopening the app
+  // never creates two identical history entries for the same screen.
   history.replaceState({ italyView: initialView }, "");
-  if (currentView() !== initialView && typeof window.showView === "function") {
+  if (visibleAtLaunch !== initialView && typeof window.showView === "function") {
+    const previousHandlingHistory = handlingHistory;
+    handlingHistory = true;
     window.showView(initialView, true);
+    handlingHistory = previousHandlingHistory;
   } else {
     restoreView(initialView);
   }
