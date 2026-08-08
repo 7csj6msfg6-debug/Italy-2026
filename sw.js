@@ -1,9 +1,10 @@
-const CACHE = 'italy-2026-app-v14';
+const CACHE = 'italy-2026-app-v15';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './venice-food-guide-update.js',
   './navigation-state.js',
   './history-aware-back.js',
   './today-polish.js',
