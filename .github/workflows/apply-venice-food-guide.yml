@@ -17,101 +17,22 @@ jobs:
         with:
           ref: agent/update-venice-food-guide
           fetch-depth: 0
-
-      - name: Update Venice food guide
+      - name: Apply prepared update
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import json,re
-          p=Path('app.js')
-          s=p.read_text(encoding='utf-8')
-
-          places=[
-            {"id":"venice-0915-dinner-testiere","name":"Osteria alle Testiere","city":"Venice","category":"Dinner","plannedDay":"2026-09-15","rank":1,"topPick":True,"favorite":True,"official":True,"rating":5,"price":"€€€€","mealWindow":"Special Dinner · Castello near Rio Hotel","notes":"Tiny, highly regarded seafood restaurant · Special dinner pick","reservation":"Strongly recommended","dishes":["Fresh fish of the day","Seafood appetizers","Venetian seafood pasta","Seasonal specials","House desserts"],"maps":"https://www.google.com/maps/search/?api=1&query=Osteria+alle+Testiere+Venice"},
-            {"id":"venice-0915-lunch-staffa","name":"Osteria alla Staffa","city":"Venice","category":"Lunch","plannedDay":"2026-09-15","rank":1,"topPick":True,"price":"€€","mealWindow":"Arrival Lunch / Relaxed Dinner · Castello","notes":"Strong moderately priced alternative near the hotel","dishes":["Fresh pasta","Venetian dishes","Seafood","Daily specials"],"maps":"https://www.google.com/maps/search/?api=1&query=Osteria+alla+Staffa+Venice"},
-            {"id":"venice-0915-bite-gislon","name":"Rosticceria Gislon","city":"Venice","category":"Small Bite","plannedDay":"2026-09-15","rank":1,"topPick":True,"favorite":True,"price":"€","mealWindow":"Quick / Casual · San Marco–Rialto corridor","notes":"Venetian snack pick · Don’t miss the mozzarella in carrozza","dishes":["Mozzarella in Carrozza","Anchovy version","Ham version"],"maps":"https://www.google.com/maps/search/?api=1&query=Rosticceria+Gislon+Venice"},
-            {"id":"venice-0915-bite-dal-moros","name":"Dal Moro’s Fresh Pasta To Go","city":"Venice","category":"Small Bite","plannedDay":"2026-09-15","rank":2,"price":"€","mealWindow":"Quick Arrival Backup · Near Rio Hotel","notes":"Keep as a convenient fast backup rather than an Official Pick","dishes":["Cacio e Pepe","Pesto"],"maps":"https://www.google.com/maps/search/?api=1&query=Dal+Moro%27s+Fresh+Pasta+To+Go+Venice"},
-            {"id":"venice-0915-dessert-mercanti","name":"I Tre Mercanti","city":"Venice","category":"Dessert","plannedDay":"2026-09-15","rank":1,"topPick":True,"favorite":True,"official":True,"rating":5,"price":"€","mealWindow":"Dessert · Near Rio Hotel","notes":"Classic tiramisu stop · Best if the line is reasonable","dishes":["Classic Tiramisu"],"maps":"https://www.google.com/maps/search/?api=1&query=I+Tre+Mercanti+Venice"},
-            {"id":"venice-0915-gelato-suso","name":"Suso Gelatoteca","city":"Venice","category":"Gelato","plannedDay":"2026-09-15","rank":1,"topPick":True,"favorite":True,"official":True,"rating":5,"price":"€","mealWindow":"Gelato · San Marco / Rialto","notes":"Gelato Official Pick · Skip a very long queue","dishes":["Crema del Doge","Pistachio"],"maps":"https://www.google.com/maps/search/?api=1&query=Suso+Gelatoteca+Venice"},
-            {"id":"venice-0915-bar-magna","name":"Magna Bevi Tasi","city":"Venice","category":"Bar","plannedDay":"2026-09-15","rank":1,"topPick":True,"price":"€","mealWindow":"Aperitivo · Next to Rio Hotel","notes":"Near-hotel pick for a pre-dinner spritz or final drink","dishes":["Spritz","Wine","Cicchetti","Coffee","Small snacks"],"maps":"https://www.google.com/maps/search/?api=1&query=Magna+Bevi+Tasi+Venice"},
-            {"id":"venice-0915-breakfast-bonifacio","name":"Pasticceria Bonifacio","city":"Venice","category":"Breakfast","plannedDay":"2026-09-15","rank":1,"topPick":True,"price":"€","mealWindow":"Breakfast / Coffee · Castello near Rio Hotel","notes":"Convenient hotel-area pastry stop · Also useful on departure morning","dishes":["Cappuccino","Espresso","Cornetto","Fresh pastries"],"maps":"https://www.google.com/maps/search/?api=1&query=Pasticceria+Bonifacio+Venice"},
-
-            {"id":"venice-0916-coffee-doge","name":"Caffè del Doge","city":"Venice","category":"Coffee","plannedDay":"2026-09-16","rank":1,"topPick":True,"price":"€","mealWindow":"Morning Coffee · Rialto","notes":"Coffee-focused stop rather than a pastry destination","dishes":["Espresso","Cappuccino","Specialty coffee"],"maps":"https://www.google.com/maps/search/?api=1&query=Caffe+del+Doge+Venice"},
-            {"id":"venice-0916-breakfast-rizzardini","name":"Pasticceria Rizzardini","city":"Venice","category":"Breakfast","plannedDay":"2026-09-16","rank":1,"topPick":True,"price":"€","mealWindow":"Pastry + Coffee · San Polo","notes":"Historic Venetian pastry shop","dishes":["Cappuccino","Espresso","Traditional pastries","Venetian sweets"],"maps":"https://www.google.com/maps/search/?api=1&query=Pasticceria+Rizzardini+Venice"},
-            {"id":"venice-0916-bite-all-arco","name":"Bar All’Arco","city":"Venice","category":"Small Bite","plannedDay":"2026-09-16","rank":1,"topPick":True,"favorite":True,"official":True,"rating":5,"price":"€","mealWindow":"Rialto Lunch Experience · MUST TRY","notes":"Cicchetti Official Pick · Primarily daytime · Start of the suggested Rialto food crawl","dishes":["Baccalà mantecato","Seafood cicchetti","Seasonal crostini","Wine","Prosecco"],"maps":"https://www.google.com/maps/search/?api=1&query=Bar+All%27Arco+Venice"},
-            {"id":"venice-0916-bite-al-merca","name":"Al Mercà","city":"Venice","category":"Small Bite","plannedDay":"2026-09-16","rank":2,"favorite":True,"price":"€","mealWindow":"Rialto Food Crawl · Quick Bite","notes":"Follow All’Arco with a small sandwich or cicchetto; do not eat heavily at either stop","dishes":["Small filled sandwiches","Cured meats","Cheese","Polpette","Baccalà","Spritz","Wine"],"maps":"https://www.google.com/maps/search/?api=1&query=Al+Merca+Venice"},
-            {"id":"venice-0916-lunch-carampane","name":"Antiche Carampane","city":"Venice","category":"Lunch","plannedDay":"2026-09-16","rank":1,"topPick":True,"price":"€€€","mealWindow":"Sit-Down Lunch Alternative · San Polo","notes":"Traditional Venetian pick if you prefer a proper restaurant instead of the cicchetti crawl","reservation":"Recommended","dishes":["Fresh fish","Octopus","Fried seafood","Seasonal dishes"],"maps":"https://www.google.com/maps/search/?api=1&query=Antiche+Carampane+Venice"},
-            {"id":"venice-0916-lunch-zucca","name":"La Zucca","city":"Venice","category":"Lunch","plannedDay":"2026-09-16","rank":2,"price":"€€","mealWindow":"Sit-Down Lunch Alternative · Santa Croce","notes":"Different / non-seafood-heavy pick","dishes":["Pumpkin flan","Seasonal vegetable dishes","Fresh pasta","Meat dishes"],"maps":"https://www.google.com/maps/search/?api=1&query=La+Zucca+Venice"},
-            {"id":"venice-0916-lunch-do-spade","name":"Cantina Do Spade","city":"Venice","category":"Lunch","plannedDay":"2026-09-16","rank":3,"price":"€€","mealWindow":"Rialto Sit-Down / Bacaro Backup","notes":"Intentional holdover from the previous guide · Useful if you want a proper meal instead of the crawl","dishes":["Mixed cicchetti","Seafood pasta","House wine"],"maps":"https://www.google.com/maps/search/?api=1&query=Cantina+Do+Spade+Venice"},
-            {"id":"venice-0916-bar-vino-vero","name":"Vino Vero","city":"Venice","category":"Bar","plannedDay":"2026-09-16","rank":1,"topPick":True,"favorite":True,"official":True,"price":"€€","mealWindow":"Cannaregio Evening · First Stop","notes":"Natural-wine-focused bacaro · Start with wine and one cicchetto","dishes":["Natural wines","Wine by the glass","Cicchetti"],"maps":"https://www.google.com/maps/search/?api=1&query=Vino+Vero+Venice"},
-            {"id":"venice-0916-bar-al-timon","name":"Al Timon","city":"Venice","category":"Bar","plannedDay":"2026-09-16","rank":2,"price":"€€","mealWindow":"Cannaregio Evening · Aperitivo","notes":"Lively canalside bacaro · Better as aperitivo than as the main dinner","dishes":["Spritz","Wine","Cicchetti"],"maps":"https://www.google.com/maps/search/?api=1&query=Al+Timon+Venice"},
-            {"id":"venice-0916-dinner-al-cicheto","name":"Osteria al Cicheto","city":"Venice","category":"Dinner","plannedDay":"2026-09-16","rank":1,"topPick":True,"favorite":True,"official":True,"rating":5,"price":"€€","mealWindow":"Cannaregio Dinner · Main Stop","notes":"Family-run neighborhood osteria with strong wine and more variety than seafood-only menus","dishes":["Fresh pasta","Venetian specialties","Meat","Seafood","Wine pairings","Homemade desserts"],"maps":"https://www.google.com/maps/search/?api=1&query=Osteria+al+Cicheto+Venice"},
-            {"id":"venice-0916-dinner-promessi","name":"Osteria Ai Promessi Sposi","city":"Venice","category":"Dinner","plannedDay":"2026-09-16","rank":2,"price":"€€","mealWindow":"Cannaregio Dinner Alternative","notes":"Relaxed, value-oriented alternative","dishes":["Bigoli","Risotto","Sarde in saor","Seafood pasta","Meat dishes"],"maps":"https://www.google.com/maps/search/?api=1&query=Osteria+Ai+Promessi+Sposi+Venice"},
-            {"id":"venice-0916-breakfast-tonolo","name":"Pasticceria Tonolo","city":"Venice","category":"Breakfast","plannedDay":"2026-09-16","rank":3,"price":"€","mealWindow":"Optional Dorsoduro Detour","notes":"Only if you naturally explore Dorsoduro · Do not cross Venice solely for it","dishes":["Traditional Venetian pastries","Cream pastries","Coffee","Seasonal sweets"],"maps":"https://www.google.com/maps/search/?api=1&query=Pasticceria+Tonolo+Venice"},
-            {"id":"venice-0916-bar-schiavi","name":"Cantine del Vino già Schiavi","city":"Venice","category":"Bar","plannedDay":"2026-09-16","rank":3,"price":"€","mealWindow":"Optional Dorsoduro Bacaro","notes":"Only if you naturally explore Dorsoduro · Classic inexpensive cicchetti stop","dishes":["Cicchetti","Baccalà","Crostini","Wine by the glass"],"maps":"https://www.google.com/maps/search/?api=1&query=Cantine+del+Vino+gia+Schiavi+Venice"},
-
-            {"id":"venice-0917-breakfast-bonifacio","name":"Pasticceria Bonifacio","city":"Venice","category":"Breakfast","plannedDay":"2026-09-17","rank":1,"topPick":True,"favorite":True,"price":"€","mealWindow":"Departure Breakfast · Near Rio Hotel","notes":"Recommended quick breakfast before the 9:26 AM Frecciarossa","dishes":["Cappuccino","Espresso","Cornetto","Fresh pastry"],"maps":"https://www.google.com/maps/search/?api=1&query=Pasticceria+Bonifacio+Venice"},
-            {"id":"venice-0917-bite-da-lele","name":"Bacareto da Lele","city":"Venice","category":"Small Bite","plannedDay":"2026-09-17","rank":2,"price":"€","mealWindow":"Departure-Morning Backup · Santa Croce","notes":"Location-based backup toward the station area · Skip if timing does not naturally work","dishes":["Small sandwiches"],"maps":"https://www.google.com/maps/search/?api=1&query=Bacareto+da+Lele+Venice"}
-          ]
-          new_guide='const VENICE_FOOD_GUIDE='+json.dumps(places,ensure_ascii=False,separators=(',',':'))+';\nconst FLORENCE_FOOD_GUIDE='
-          s,n=re.subn(r'const VENICE_FOOD_GUIDE=\[.*?\];\nconst FLORENCE_FOOD_GUIDE=',new_guide,s,count=1,flags=re.S)
-          assert n==1,'Venice guide block not found'
-
-          venice_extras={
-            "signatures":["🥪 Bar All’Arco + Al Mercà Rialto food crawl","🦞 Seafood dinner at Osteria alle Testiere","🍮 Classic tiramisu at I Tre Mercanti","🍨 Suso — Crema del Doge","🌙 Cannaregio food night: Vino Vero → Al Timon → Osteria al Cicheto"],
-            "skip":["Do not cross Venice solely for optional Dorsoduro food stops.","Skip very long queues at Suso or I Tre Mercanti; use them when the line is reasonable.","Restaurants in St. Mark’s Square with multilingual tourist menus or aggressive hosts.","Do not treat every recommendation as mandatory; prioritize what fits your current route and appetite."],
-            "five":["🥪 Bar All’Arco + Al Mercà crawl","🦞 Osteria alle Testiere — special seafood dinner","🍮 I Tre Mercanti — classic tiramisu","🍨 Suso — Crema del Doge","🌙 Cannaregio food night"]
-          }
-          rep='const CITY_FOOD_EXTRAS={"Venice":'+json.dumps(venice_extras,ensure_ascii=False,separators=(',',':'))+',"Florence":'
-          s,n=re.subn(r'const CITY_FOOD_EXTRAS=\{"Venice":\{.*?\},"Florence":',rep,s,count=1,flags=re.S)
-          assert n==1,'Venice extras block not found'
-
+          import re
+          p=Path('app.js'); s=p.read_text(encoding='utf-8')
           s=s.replace('const FOOD_GUIDE_VERSION=5;','const FOOD_GUIDE_VERSION=6;',1)
-          old="const custom=current.filter(x=>!curatedIds.has(x.id)&&!/^venice-09(15|16)-coffee-/.test(x.id)&&!/^(naples|capri)-09(24|25|26)-/.test(x.id));"
-          new="const custom=current.filter(x=>!curatedIds.has(x.id)&&!/^venice-/.test(x.id)&&!/^(naples|capri)-09(24|25|26)-/.test(x.id));"
-          assert old in s,'migration filter not found'
-          s=s.replace(old,new,1)
           s=s.replace("activeCity==='Venice'?'September 15–16':","activeCity==='Venice'?'September 15–17':",1)
-
-          old_day="""const dayTitle=date=>({
-        '2026-09-15':'Arrival Day','2026-09-16':'Tour Day','2026-09-17':'Arrival Day','2026-09-18':'Museum Day','2026-09-19':'Pisa & Wine Tour','2026-09-20':'Arrival Day','2026-09-21':'Colosseum Day','2026-09-22':'Vatican Day','2026-09-23':'Final Rome Day','2026-09-24':'Arrival Day','2026-09-25':'Capri Day','2026-09-26':'Pompeii & Mount Vesuvius'
-      })[date]||'';"""
-          new_day="""const dayTitle=date=>{
-        if(activeCity==='Venice'&&date==='2026-09-17')return 'Departure to Florence';
-        return ({'2026-09-15':'Arrival Day','2026-09-16':'Full Venice Day','2026-09-17':'Arrival Day','2026-09-18':'Museum Day','2026-09-19':'Pisa & Wine Tour','2026-09-20':'Arrival Day','2026-09-21':'Colosseum Day','2026-09-22':'Vatican Day','2026-09-23':'Final Rome Day','2026-09-24':'Arrival Day','2026-09-25':'Capri Day','2026-09-26':'Pompeii & Mount Vesuvius'})[date]||'';
-      };"""
-          assert old_day in s,'day-title block not found'
-          s=s.replace(old_day,new_day,1)
-
-          coords={
-            "Venice|Osteria alla Staffa":{"lat":45.4372,"lng":12.3448},"Venice|Rosticceria Gislon":{"lat":45.4376,"lng":12.3408},"Venice|Magna Bevi Tasi":{"lat":45.4348,"lng":12.3411},"Venice|Pasticceria Bonifacio":{"lat":45.4352,"lng":12.3421},"Venice|Caffè del Doge":{"lat":45.4380,"lng":12.3345},"Venice|Pasticceria Rizzardini":{"lat":45.4367,"lng":12.3318},"Venice|Bar All’Arco":{"lat":45.4382,"lng":12.3340},"Venice|Vino Vero":{"lat":45.4459,"lng":12.3317},"Venice|Al Timon":{"lat":45.4455,"lng":12.3301},"Venice|Osteria al Cicheto":{"lat":45.4428,"lng":12.3244},"Venice|Osteria Ai Promessi Sposi":{"lat":45.4437,"lng":12.3303},"Venice|Pasticceria Tonolo":{"lat":45.4360,"lng":12.3225},"Venice|Cantine del Vino già Schiavi":{"lat":45.4318,"lng":12.3267},"Venice|Bacareto da Lele":{"lat":45.4378,"lng":12.3216}
-          }
-          marker='const GUIDE_LOCATION_ANCHORS={'
-          assert marker in s,'coordinate marker not found'
-          s=s.replace(marker,'Object.assign(GUIDE_PLACE_COORDS,'+json.dumps(coords,ensure_ascii=False,separators=(',',':'))+');\n'+marker,1)
-
           p.write_text(s,encoding='utf-8')
           PY
-
-      - name: Bump offline cache
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('sw.js'); s=p.read_text(); s=s.replace("italy-2026-app-v14","italy-2026-app-v15",1); p.write_text(s)
-          p=Path('app-status.js'); s=p.read_text(); s=s.replace("2026.08.07.9","2026.08.08.1",1).replace("italy-2026-app-v14","italy-2026-app-v15",1); p.write_text(s)
-          PY
-
-      - name: Validate JavaScript
-        run: |
           node --check app.js
-          node --check sw.js
-          node --check app-status.js
-
-      - name: Commit update
+      - name: Commit trigger verification
         run: |
           rm .github/workflows/apply-venice-food-guide.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.js sw.js app-status.js .github/workflows/apply-venice-food-guide.yml
-          git commit -m "Update Venice food guide"
+          git add app.js .github/workflows/apply-venice-food-guide.yml
+          git commit -m "Apply Venice food guide migration"
           git push origin HEAD:agent/update-venice-food-guide
