@@ -1,10 +1,11 @@
-const CACHE = 'italy-2026-app-v15';
+const CACHE = 'italy-2026-app-v16';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './venice-food-guide-update.js',
+  './florence-food-guide-update.js',
   './navigation-state.js',
   './history-aware-back.js',
   './today-polish.js',
@@ -19,8 +20,6 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  // Automatically activate new deployments once iOS detects them.
-  // No in-app Refresh action is required.
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)));
 });
@@ -36,10 +35,8 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
@@ -50,14 +47,11 @@ self.addEventListener('fetch', event => {
         }
         return response;
       } catch {
-        return (await caches.match(request)) ||
-          (await caches.match('./index.html')) ||
-          (await caches.match('./'));
+        return (await caches.match(request)) || (await caches.match('./index.html')) || (await caches.match('./'));
       }
     })());
     return;
   }
-
   event.respondWith((async () => {
     const cached = await caches.match(request);
     const network = fetch(request).then(async response => {
@@ -67,12 +61,7 @@ self.addEventListener('fetch', event => {
       }
       return response;
     }).catch(() => null);
-
-    if (cached) {
-      event.waitUntil(network);
-      return cached;
-    }
-
+    if (cached) { event.waitUntil(network); return cached; }
     const response = await network;
     return response || Response.error();
   })());
