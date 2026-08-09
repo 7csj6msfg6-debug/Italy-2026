@@ -1,4 +1,4 @@
-const CACHE = 'italy-2026-app-v21';
+const CACHE = 'italy-2026-app-v22';
 const APP_SHELL = [
   './','./index.html','./style.css','./app.js','./venice-food-guide-update.js','./florence-food-guide-update.js','./rome-food-guide-update.js','./naples-capri-food-guide-update.js','./navigation-state.js','./history-aware-back.js','./today-polish.js','./wallet-polish.js','./wallet-reliability.js','./today-ticket-actions.js','./calendar-icon-polish.js','./guide-collapse-default.js','./nearby-guide-focus.js','./app-status.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'
 ];
