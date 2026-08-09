@@ -1,6 +1,6 @@
 (() => {
-  const BUILD = '2026.08.08.1';
-  const EXPECTED_CACHE = 'italy-2026-app-v15';
+  const BUILD = '2026.08.08.2';
+  const EXPECTED_CACHE = 'italy-2026-app-v16';
 
   function ensureStyles() {
     if (document.getElementById('app-status-styles')) return;
@@ -70,17 +70,11 @@
 
   const more = document.getElementById('more');
   if (more) new MutationObserver(() => { if (!more.classList.contains('hidden')) requestAnimationFrame(renderStatus); }).observe(more, { attributes: true, attributeFilter: ['class'] });
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') return;
-    renderStatus();
-    checkForUpdates();
-  });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') return; renderStatus(); checkForUpdates(); });
   window.addEventListener('online', () => { renderStatus(); checkForUpdates(); });
   window.addEventListener('offline', renderStatus);
   window.addEventListener('focus', checkForUpdates);
   navigator.serviceWorker?.addEventListener('controllerchange', renderStatus);
-
   requestAnimationFrame(renderStatus);
   checkForUpdates();
 })();
