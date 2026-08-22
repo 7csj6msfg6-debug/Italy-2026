@@ -1,6 +1,6 @@
-const CACHE = 'italy-2026-app-v22';
+const CACHE = 'italy-2026-app-v23';
 const APP_SHELL = [
-  './','./index.html','./style.css','./app.js','./venice-food-guide-update.js','./florence-food-guide-update.js','./rome-food-guide-update.js','./naples-capri-food-guide-update.js','./navigation-state.js','./history-aware-back.js','./today-polish.js','./wallet-polish.js','./wallet-reliability.js','./today-ticket-actions.js','./calendar-icon-polish.js','./guide-collapse-default.js','./nearby-guide-focus.js','./app-status.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'
+  './','./index.html','./style.css','./app.js','./sept21-itinerary-update.js','./venice-food-guide-update.js','./florence-food-guide-update.js','./rome-food-guide-update.js','./naples-capri-food-guide-update.js','./navigation-state.js','./history-aware-back.js','./today-polish.js','./wallet-polish.js','./wallet-reliability.js','./today-ticket-actions.js','./calendar-icon-polish.js','./guide-collapse-default.js','./nearby-guide-focus.js','./app-status.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'
 ];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)))});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)));await self.clients.claim()})())});
