@@ -34,6 +34,7 @@
       return new Map();
     }
   }
+  window.getWalletAttachmentMap = attachmentMap;
 
   function decorateWallet(map) {
     document.querySelectorAll("#wallet [data-wallet-key]").forEach(card => {
@@ -123,6 +124,7 @@
       alert("This ticket could not be opened.");
     }
   }
+  window.openImportedTicket = openDirectTicket;
 
   document.addEventListener("click", event => {
     const button = event.target.closest("#home [data-home-wallet][data-direct-ticket-id]");
