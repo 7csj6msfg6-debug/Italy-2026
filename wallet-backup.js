@@ -1,6 +1,9 @@
 (() => {
-  const FORMAT = 'italy-2026-wallet-backup';
-  const VERSION = 1;
+  const FORMAT = 'italy-2026-app-backup';
+  const VERSION = 2;
+  const LEGACY_FORMAT = 'italy-2026-wallet-backup';
+  const LEGACY_VERSION = 1;
+  const STORAGE_PREFIX = 'italy2026-';
   const LAST = 'italy2026-wallet-last-backup';
   let busy = false;
   let crcTable;
@@ -28,6 +31,40 @@
     busy = v;
     document.querySelectorAll('[data-wallet-backup],[data-wallet-restore]').forEach(b => b.disabled = v);
     if (t) status(t);
+  }
+
+  function appStorageEntries() {
+    const out = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(STORAGE_PREFIX)) continue;
+      const value = localStorage.getItem(key);
+      if (value !== null) out.push({ key, value });
+    }
+    return out.sort((a, b) => a.key.localeCompare(b.key));
+  }
+
+  function restoreAppStorage(entries) {
+    if (!Array.isArray(entries)) throw new Error('The local app data in this backup is invalid.');
+    const clean = entries.map(item => {
+      if (!item || typeof item.key !== 'string' || typeof item.value !== 'string' || !item.key.startsWith(STORAGE_PREFIX)) {
+        throw new Error('The local app data in this backup is invalid.');
+      }
+      return { key: item.key, value: item.value };
+    });
+
+    const before = appStorageEntries();
+    try {
+      before.forEach(item => localStorage.removeItem(item.key));
+      clean.forEach(item => localStorage.setItem(item.key, item.value));
+      return clean.length;
+    } catch (error) {
+      try {
+        appStorageEntries().forEach(item => localStorage.removeItem(item.key));
+        before.forEach(item => localStorage.setItem(item.key, item.value));
+      } catch {}
+      throw new Error('Local app data could not be restored safely. Existing local data was kept.');
+    }
   }
 
   function table() {
@@ -122,8 +159,9 @@
   }
 
   async function makeBackup() {
+    if (typeof window.getImportedTickets !== 'function') throw new Error('Private Wallet storage is unavailable.');
     const tickets = await window.getImportedTickets();
-    if (!tickets.length) throw new Error('There are no locally saved ticket files to back up yet.');
+    const localEntries = appStorageEntries();
     const stamp = dos();
     const entries = [];
     const files = [];
@@ -131,7 +169,7 @@
     for (let i = 0; i < tickets.length; i++) {
       const t = tickets[i];
       const b = t.blob instanceof Blob ? t.blob : new Blob([t.blob], { type: t.type || 'application/octet-stream' });
-      status(`Preparing backup… ${i + 1} of ${tickets.length}`);
+      status(`Preparing ticket files… ${i + 1} of ${tickets.length}`);
       const name = `files/${String(i + 1).padStart(3, '0')}-${safe(t.fileName || t.name)}`;
       const sum = await crc(b);
       entries.push({ name, blob: b, size: b.size, crc: sum, time: stamp.time, date: stamp.date });
@@ -155,21 +193,25 @@
       format: FORMAT,
       version: VERSION,
       createdAt: new Date().toISOString(),
-      files
+      files,
+      localStorage: {
+        prefix: STORAGE_PREFIX,
+        entries: localEntries
+      }
     }, null, 2)], { type: 'application/json' });
     const me = { name: 'manifest.json', blob: m, size: m.size, crc: await crc(m), time: stamp.time, date: stamp.date };
-    return { blob: zip([me, ...entries]), count: tickets.length };
+    return { blob: zip([me, ...entries]), ticketCount: tickets.length, localCount: localEntries.length };
   }
 
   async function backup() {
     if (busy) return;
     try {
-      setBusy(true, 'Preparing backup…');
-      const { blob, count } = await makeBackup();
+      setBusy(true, 'Preparing full backup…');
+      const { blob, ticketCount, localCount } = await makeBackup();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Italy-2026-Wallet-Backup-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.download = `Italy-2026-Full-Backup-${new Date().toISOString().slice(0, 10)}.zip`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -177,10 +219,10 @@
       const now = new Date().toISOString();
       try { localStorage.setItem(LAST, now); } catch {}
       await decorateMore();
-      status(`Backup created · ${count} ${count === 1 ? 'file' : 'files'}`);
+      status(`Backup created · ${ticketCount} ticket ${ticketCount === 1 ? 'file' : 'files'} · ${localCount} local ${localCount === 1 ? 'item' : 'items'}`);
     } catch (e) {
       console.error(e);
-      alert(e.message || 'The Wallet backup could not be created.');
+      alert(e.message || 'The full app backup could not be created.');
       status('Backup was not created.');
     } finally {
       setBusy(false);
@@ -188,7 +230,7 @@
   }
 
   async function directory(file) {
-    if (file.size < 22) throw new Error('This is not a valid Wallet backup.');
+    if (file.size < 22) throw new Error('This is not a valid Italy 2026 backup.');
     const start = Math.max(0, file.size - 65557);
     const tail = new Uint8Array(await file.slice(start).arrayBuffer());
     const tv = new DataView(tail.buffer);
@@ -234,12 +276,24 @@
     const v = new DataView(h.buffer);
     if (h.length < 30 || v.getUint32(0, true) !== 0x04034b50) throw new Error('A file in the backup is damaged.');
     const s = e.lo + 30 + v.getUint16(26, true) + v.getUint16(28, true);
-
-    // Detach the restored file from the source ZIP before storing it.
-    // On iOS/WebKit, persisting File.slice() blobs directly can cause multiple
-    // IndexedDB records to later resolve to the same underlying source data.
     const bytes = await file.slice(s, s + e.cs).arrayBuffer();
     return new Blob([bytes], { type });
+  }
+
+  async function readBackup(file) {
+    const dir = await directory(file);
+    const me = dir.get('manifest.json');
+    if (!me) throw new Error('This ZIP does not contain an Italy 2026 backup.');
+    const mb = await entry(file, me, 'application/json');
+    if (await crc(mb) !== me.crc) throw new Error('The backup manifest failed its integrity check.');
+    const manifest = JSON.parse(await mb.text());
+    const current = manifest.format === FORMAT && manifest.version === VERSION && Array.isArray(manifest.files);
+    const legacy = manifest.format === LEGACY_FORMAT && manifest.version === LEGACY_VERSION && Array.isArray(manifest.files);
+    if (!current && !legacy) throw new Error('This is not a supported Italy 2026 backup.');
+    if (current && (!manifest.localStorage || !Array.isArray(manifest.localStorage.entries))) {
+      throw new Error('This full backup is missing its local app data.');
+    }
+    return { dir, manifest, legacy };
   }
 
   function walletEntries() {
@@ -309,111 +363,136 @@
     return null;
   }
 
+  async function restoreTickets(file, dir, manifest) {
+    let existing = await window.getImportedTickets();
+    let added = 0;
+    let skipped = 0;
+    let repaired = 0;
+    let recovered = 0;
+
+    for (let i = 0; i < manifest.files.length; i++) {
+      const meta = manifest.files[i];
+      const e = dir.get(meta.entry);
+      status(`Restoring ticket files… ${i + 1} of ${manifest.files.length}`);
+      if (!e) throw new Error(`Missing ticket file: ${meta.fileName || meta.entry}`);
+
+      const b = await entry(file, e, meta.type || 'application/octet-stream');
+      const sum = await crc(b);
+      const expected = Number(meta.crc32) >>> 0;
+      if (sum !== e.crc || sum !== expected) throw new Error(`Integrity check failed: ${meta.fileName || meta.entry}`);
+
+      const key = relink(meta);
+      const r = {
+        name: meta.name || meta.fileName || 'Restored ticket',
+        category: meta.category || 'Other',
+        date: meta.date || '',
+        time: meta.time || '',
+        notes: meta.notes || '',
+        linkedWalletKey: key,
+        fileName: meta.fileName || safe(meta.name),
+        type: meta.type || b.type || 'application/octet-stream',
+        size: b.size,
+        blob: b,
+        createdAt: Number(meta.createdAt) || Date.now()
+      };
+      const signature = sig(r);
+      const matches = existing.filter(item => sig(item) === signature);
+
+      let healthy = null;
+      const damaged = [];
+      for (const candidate of matches) {
+        if (await blobCrc(candidate) === expected) {
+          healthy = candidate;
+          break;
+        }
+        damaged.push(candidate);
+      }
+
+      if (healthy) {
+        skipped++;
+        continue;
+      }
+
+      const newId = await window.saveImportedTicket(r);
+      const saved = await verifySavedTicket(newId, expected, signature);
+      if (!saved) {
+        if (newId != null && typeof window.deleteImportedTicket === 'function') {
+          try { await window.deleteImportedTicket(newId); } catch {}
+        }
+        throw new Error(`Verification failed after restoring: ${meta.fileName || meta.entry}`);
+      }
+
+      if (damaged.length) {
+        for (const candidate of damaged) {
+          if (candidate.id === saved.id) continue;
+          await removeImportedTicket(candidate.id);
+        }
+        repaired++;
+      } else {
+        added++;
+      }
+
+      if (meta.linkedWalletKey && !walletEntries().some(x => x.key === key)) recovered++;
+      existing = await window.getImportedTickets();
+    }
+
+    return { added, skipped, repaired, recovered };
+  }
+
   async function restore(file) {
     if (busy || !file) return;
-    if (!confirm('Restore this Wallet backup? Existing healthy files will stay in place. Matching damaged restored copies will be repaired.')) return;
-
+    let parsed;
     try {
       setBusy(true, 'Reading backup…');
-      const dir = await directory(file);
-      const me = dir.get('manifest.json');
-      if (!me) throw new Error('This ZIP does not contain an Italy 2026 Wallet backup.');
-
-      const mb = await entry(file, me, 'application/json');
-      if (await crc(mb) !== me.crc) throw new Error('The backup manifest failed its integrity check.');
-      const m = JSON.parse(await mb.text());
-      if (m.format !== FORMAT || m.version !== VERSION || !Array.isArray(m.files)) {
-        throw new Error('This is not a supported Italy 2026 Wallet backup.');
-      }
-
-      let existing = await window.getImportedTickets();
-      let added = 0;
-      let skipped = 0;
-      let repaired = 0;
-      let recovered = 0;
-
-      for (let i = 0; i < m.files.length; i++) {
-        const meta = m.files[i];
-        const e = dir.get(meta.entry);
-        status(`Restoring… ${i + 1} of ${m.files.length}`);
-        if (!e) throw new Error(`Missing ticket file: ${meta.fileName || meta.entry}`);
-
-        const b = await entry(file, e, meta.type || 'application/octet-stream');
-        const sum = await crc(b);
-        const expected = Number(meta.crc32) >>> 0;
-        if (sum !== e.crc || sum !== expected) {
-          throw new Error(`Integrity check failed: ${meta.fileName || meta.entry}`);
-        }
-
-        const key = relink(meta);
-        const r = {
-          name: meta.name || meta.fileName || 'Restored ticket',
-          category: meta.category || 'Other',
-          date: meta.date || '',
-          time: meta.time || '',
-          notes: meta.notes || '',
-          linkedWalletKey: key,
-          fileName: meta.fileName || safe(meta.name),
-          type: meta.type || b.type || 'application/octet-stream',
-          size: b.size,
-          blob: b,
-          createdAt: Number(meta.createdAt) || Date.now()
-        };
-        const signature = sig(r);
-        const matches = existing.filter(item => sig(item) === signature);
-
-        let healthy = null;
-        const damaged = [];
-        for (const candidate of matches) {
-          if (await blobCrc(candidate) === expected) {
-            healthy = candidate;
-            break;
-          }
-          damaged.push(candidate);
-        }
-
-        if (healthy) {
-          skipped++;
-          continue;
-        }
-
-        const newId = await window.saveImportedTicket(r);
-        const saved = await verifySavedTicket(newId, expected, signature);
-        if (!saved) {
-          if (newId != null && typeof window.deleteImportedTicket === 'function') {
-            try { await window.deleteImportedTicket(newId); } catch {}
-          }
-          throw new Error(`Verification failed after restoring: ${meta.fileName || meta.entry}`);
-        }
-
-        if (damaged.length) {
-          for (const candidate of damaged) {
-            if (candidate.id === saved.id) continue;
-            await removeImportedTicket(candidate.id);
-          }
-          repaired++;
-        } else {
-          added++;
-        }
-
-        if (meta.linkedWalletKey && !walletEntries().some(x => x.key === key)) recovered++;
-        existing = await window.getImportedTickets();
-      }
-
-      await window.renderWallet?.();
-      await decorateMore();
-      const msg = [
-        repaired ? `${repaired} repaired` : '',
-        added ? `${added} restored` : '',
-        skipped ? `${skipped} healthy duplicate${skipped === 1 ? '' : 's'} skipped` : '',
-        recovered ? `${recovered} shown in Recovered files` : ''
-      ].filter(Boolean).join(' · ') || 'No changes needed';
-
-      status(`Restore complete · ${msg}`);
-      alert(`Wallet restore complete.\n\n${msg}`);
+      parsed = await readBackup(file);
     } catch (e) {
       console.error(e);
-      alert(e.message || 'The Wallet backup could not be restored.');
+      alert(e.message || 'The Italy 2026 backup could not be read.');
+      status('Restore was not completed.');
+      setBusy(false);
+      return;
+    }
+
+    const { dir, manifest, legacy } = parsed;
+    const ok = legacy
+      ? confirm('Restore this older Wallet-only backup? Ticket files will be restored or repaired. This older backup does not contain custom places, Trip Notes, favorites, progress or other local app data.')
+      : confirm('Restore this full Italy 2026 backup? Ticket files will be restored or repaired, and this shortcut’s local app data — including custom places/restaurants, notes, favorites, planned days, progress and settings — will be replaced with the backup copy.');
+    if (!ok) {
+      status('Restore canceled.');
+      setBusy(false);
+      return;
+    }
+
+    try {
+      const result = await restoreTickets(file, dir, manifest);
+      let localCount = 0;
+      if (!legacy) {
+        status('Restoring local app data…');
+        localCount = restoreAppStorage(manifest.localStorage.entries);
+        try { localStorage.setItem(LAST, manifest.createdAt || new Date().toISOString()); } catch {}
+      }
+
+      const msg = [
+        result.repaired ? `${result.repaired} ticket ${result.repaired === 1 ? 'file' : 'files'} repaired` : '',
+        result.added ? `${result.added} ticket ${result.added === 1 ? 'file' : 'files'} restored` : '',
+        result.skipped ? `${result.skipped} healthy ticket ${result.skipped === 1 ? 'file' : 'files'} kept` : '',
+        result.recovered ? `${result.recovered} shown in Recovered files` : '',
+        !legacy ? `${localCount} local ${localCount === 1 ? 'item' : 'items'} restored` : ''
+      ].filter(Boolean).join(' · ') || 'No changes needed';
+
+      if (legacy) {
+        await window.renderWallet?.();
+        await decorateMore();
+        status(`Restore complete · ${msg}`);
+        alert(`Wallet restore complete.\n\n${msg}`);
+      } else {
+        status(`Restore complete · ${msg}`);
+        alert(`Full app restore complete.\n\n${msg}\n\nThe app will reload now so all restored local data is applied.`);
+        setTimeout(() => location.reload(), 50);
+      }
+    } catch (e) {
+      console.error(e);
+      alert(e.message || 'The Italy 2026 backup could not be restored.');
       status('Restore was not completed.');
     } finally {
       setBusy(false);
@@ -425,7 +504,8 @@
       const a = await window.getImportedTickets();
       return {
         count: a.length,
-        bytes: a.reduce((s, t) => s + (Number(t.size) || Number(t.blob?.size) || 0), 0)
+        bytes: a.reduce((s, t) => s + (Number(t.size) || Number(t.blob?.size) || 0), 0),
+        localCount: appStorageEntries().length
       };
     } catch {
       return null;
@@ -449,7 +529,11 @@
     const card = document.createElement('section');
     card.className = 'info-card wallet-backup-card';
     card.id = 'walletBackupCard';
-    card.innerHTML = `<div class="wallet-backup-head"><div><strong>Data & Backup</strong><div class="small">Protect your locally stored ticket files</div></div><span class="wallet-backup-count">${st ? `${st.count} ${st.count === 1 ? 'file' : 'files'}` : 'Unavailable'}</span></div><div class="small" style="margin-top:8px">${st ? (st.count ? `${fmtSize(st.bytes)} stored only on this device.` : 'No private ticket files are stored yet.') : 'Private Wallet storage could not be read.'}</div><div class="wallet-backup-actions"><button class="primary" data-wallet-backup ${!st || !st.count ? 'disabled' : ''}>Back Up Wallet</button><button class="secondary" data-wallet-restore ${!st ? 'disabled' : ''}>Restore Wallet</button><input class="hidden" type="file" accept=".zip,application/zip" data-wallet-restore-input></div><div class="small wallet-backup-status" data-wallet-backup-status>Last backup: ${esc(when)}</div>`;
+    const badge = st ? `${st.count} ticket ${st.count === 1 ? 'file' : 'files'}` : 'Unavailable';
+    const detail = st
+      ? `${fmtSize(st.bytes)} of ticket files · ${st.localCount} local ${st.localCount === 1 ? 'item' : 'items'} ready to protect.`
+      : 'Local app data could not be read.';
+    card.innerHTML = `<div class="wallet-backup-head"><div><strong>Data & Backup</strong><div class="small">Protect tickets, custom places, notes and local app data</div></div><span class="wallet-backup-count">${badge}</span></div><div class="small" style="margin-top:8px">${detail}</div><div class="wallet-backup-actions"><button class="primary" data-wallet-backup ${!st ? 'disabled' : ''}>Back Up Everything</button><button class="secondary" data-wallet-restore ${!st ? 'disabled' : ''}>Restore Backup</button><input class="hidden" type="file" accept=".zip,application/zip" data-wallet-restore-input></div><div class="small wallet-backup-status" data-wallet-backup-status>Last backup: ${esc(when)}</div>`;
 
     const app = more.querySelector('.app-status-card');
     app ? more.insertBefore(card, app) : more.appendChild(card);
@@ -472,7 +556,7 @@
 
     const row = document.createElement('div');
     row.className = 'wallet-backup-link';
-    row.innerHTML = 'Ticket files are stored locally on this device. <button type="button">Backup & restore</button>';
+    row.innerHTML = 'Tickets, custom places and notes are stored locally on this device. <button type="button">Backup & restore</button>';
     content.insertAdjacentElement('afterend', row);
     row.querySelector('button').addEventListener('click', () => {
       window.showView?.('more');
