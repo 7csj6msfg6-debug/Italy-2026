@@ -1,38 +1,514 @@
 (() => {
-  const FORMAT='italy-2026-wallet-backup', VERSION=1, LAST='italy2026-wallet-last-backup';
-  let busy=false, crcTable;
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-  const fmtSize=n=>n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(1)} KB`:`${(n/1048576).toFixed(1)} MB`;
-  const safe=s=>(String(s||'ticket').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim()||'ticket').slice(0,100);
+  const FORMAT = 'italy-2026-wallet-backup';
+  const VERSION = 1;
+  const LAST = 'italy2026-wallet-last-backup';
+  let busy = false;
+  let crcTable;
 
-  function styles(){if(document.getElementById('wallet-backup-styles'))return;const s=document.createElement('style');s.id='wallet-backup-styles';s.textContent=`.wallet-backup-card{margin-top:16px}.wallet-backup-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.wallet-backup-count{font-size:12px;font-weight:850;color:#17603f;background:rgba(23,96,63,.08);padding:5px 8px;border-radius:999px}.wallet-backup-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.wallet-backup-status{margin-top:10px}.wallet-backup-link{margin:14px 0 4px;padding:10px 0;text-align:center;color:var(--muted);font-size:12px}.wallet-backup-link button{border:0;background:none;color:#184f3b;font:inherit;font-weight:800;text-decoration:underline;text-underline-offset:2px}.wallet-backup-target{box-shadow:0 0 0 3px rgba(20,63,49,.2),var(--shadow)!important}`;document.head.appendChild(s)}
-  function status(t){document.querySelectorAll('[data-wallet-backup-status]').forEach(x=>x.textContent=t)}
-  function setBusy(v,t=''){busy=v;document.querySelectorAll('[data-wallet-backup],[data-wallet-restore]').forEach(b=>b.disabled=v);if(t)status(t)}
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+  const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const fmtSize = n => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`;
+  const safe = s => (String(s || 'ticket').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim() || 'ticket').slice(0, 100);
 
-  function table(){if(crcTable)return crcTable;crcTable=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?0xedb88320^(c>>>1):c>>>1;crcTable[n]=c>>>0}return crcTable}
-  async function crc(blob){let c=0xffffffff,t=table();const r=blob.stream().getReader();for(;;){const {value,done}=await r.read();if(done)break;for(const b of value)c=t[(c^b)&255]^(c>>>8)}return(c^0xffffffff)>>>0}
-  function dos(d=new Date()){const y=Math.max(1980,Math.min(2107,d.getFullYear()));return{time:(d.getHours()<<11)|(d.getMinutes()<<5)|Math.floor(d.getSeconds()/2),date:((y-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate()}}
-  function local(e,n){const a=new Uint8Array(30+n.length),v=new DataView(a.buffer);v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x0800,true);v.setUint16(10,e.time,true);v.setUint16(12,e.date,true);v.setUint32(14,e.crc,true);v.setUint32(18,e.size,true);v.setUint32(22,e.size,true);v.setUint16(26,n.length,true);a.set(n,30);return a}
-  function central(e,n,o){const a=new Uint8Array(46+n.length),v=new DataView(a.buffer);v.setUint32(0,0x02014b50,true);v.setUint16(4,20,true);v.setUint16(6,20,true);v.setUint16(8,0x0800,true);v.setUint16(12,e.time,true);v.setUint16(14,e.date,true);v.setUint32(16,e.crc,true);v.setUint32(20,e.size,true);v.setUint32(24,e.size,true);v.setUint16(28,n.length,true);v.setUint32(42,o,true);a.set(n,46);return a}
-  function zip(entries){const enc=new TextEncoder(),parts=[],cd=[];let off=0;for(const e of entries){const n=enc.encode(e.name),h=local(e,n);parts.push(h,e.blob);cd.push(central(e,n,off));off+=h.length+e.size}const cdoff=off,cdsize=cd.reduce((s,a)=>s+a.length,0);parts.push(...cd);const end=new Uint8Array(22),v=new DataView(end.buffer);v.setUint32(0,0x06054b50,true);v.setUint16(8,entries.length,true);v.setUint16(10,entries.length,true);v.setUint32(12,cdsize,true);v.setUint32(16,cdoff,true);parts.push(end);return new Blob(parts,{type:'application/zip'})}
+  function styles() {
+    if (document.getElementById('wallet-backup-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'wallet-backup-styles';
+    s.textContent = `.wallet-backup-card{margin-top:16px}.wallet-backup-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.wallet-backup-count{font-size:12px;font-weight:850;color:#17603f;background:rgba(23,96,63,.08);padding:5px 8px;border-radius:999px}.wallet-backup-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.wallet-backup-status{margin-top:10px}.wallet-backup-link{margin:14px 0 4px;padding:10px 0;text-align:center;color:var(--muted);font-size:12px}.wallet-backup-link button{border:0;background:none;color:#184f3b;font:inherit;font-weight:800;text-decoration:underline;text-underline-offset:2px}.wallet-backup-target{box-shadow:0 0 0 3px rgba(20,63,49,.2),var(--shadow)!important}`;
+    document.head.appendChild(s);
+  }
 
-  async function makeBackup(){const tickets=await window.getImportedTickets();if(!tickets.length)throw new Error('There are no locally saved ticket files to back up yet.');const stamp=dos(),entries=[],files=[];for(let i=0;i<tickets.length;i++){const t=tickets[i],b=t.blob instanceof Blob?t.blob:new Blob([t.blob],{type:t.type||'application/octet-stream'});status(`Preparing backup… ${i+1} of ${tickets.length}`);const name=`files/${String(i+1).padStart(3,'0')}-${safe(t.fileName||t.name)}`,sum=await crc(b);entries.push({name,blob:b,size:b.size,crc:sum,time:stamp.time,date:stamp.date});files.push({entry:name,crc32:sum,name:t.name||'',category:t.category||'Other',date:t.date||'',time:t.time||'',notes:t.notes||'',linkedWalletKey:t.linkedWalletKey||'',fileName:t.fileName||safe(t.name),type:t.type||b.type||'application/octet-stream',size:b.size,createdAt:Number(t.createdAt)||Date.now()})}const m=new Blob([JSON.stringify({format:FORMAT,version:VERSION,createdAt:new Date().toISOString(),files},null,2)],{type:'application/json'}),me={name:'manifest.json',blob:m,size:m.size,crc:await crc(m),time:stamp.time,date:stamp.date};return{blob:zip([me,...entries]),count:tickets.length}}
-  async function backup(){if(busy)return;try{setBusy(true,'Preparing backup…');const {blob,count}=await makeBackup(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Italy-2026-Wallet-Backup-${new Date().toISOString().slice(0,10)}.zip`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),120000);const now=new Date().toISOString();try{localStorage.setItem(LAST,now)}catch{}await decorateMore();status(`Backup created · ${count} ${count===1?'file':'files'}`)}catch(e){console.error(e);alert(e.message||'The Wallet backup could not be created.');status('Backup was not created.')}finally{setBusy(false)}}
+  function status(t) {
+    document.querySelectorAll('[data-wallet-backup-status]').forEach(x => x.textContent = t);
+  }
 
-  async function directory(file){if(file.size<22)throw new Error('This is not a valid Wallet backup.');const start=Math.max(0,file.size-65557),tail=new Uint8Array(await file.slice(start).arrayBuffer()),tv=new DataView(tail.buffer);let p=-1;for(let i=tail.length-22;i>=0;i--)if(tv.getUint32(i,true)===0x06054b50){p=i;break}if(p<0)throw new Error('The backup ZIP is incomplete or damaged.');const count=tv.getUint16(p+10,true),size=tv.getUint32(p+12,true),off=tv.getUint32(p+16,true),bytes=new Uint8Array(await file.slice(off,off+size).arrayBuffer()),v=new DataView(bytes.buffer),dec=new TextDecoder(),map=new Map();let x=0;for(let i=0;i<count;i++){if(v.getUint32(x,true)!==0x02014b50)throw new Error('The backup ZIP directory is damaged.');const flags=v.getUint16(x+8,true),method=v.getUint16(x+10,true),sum=v.getUint32(x+16,true),cs=v.getUint32(x+20,true),us=v.getUint32(x+24,true),nl=v.getUint16(x+28,true),el=v.getUint16(x+30,true),cl=v.getUint16(x+32,true),lo=v.getUint32(x+42,true),name=dec.decode(bytes.slice(x+46,x+46+nl));if(flags&1||method!==0)throw new Error('This backup uses an unsupported ZIP format.');map.set(name,{name,crc:sum,cs,us,lo});x+=46+nl+el+cl}return map}
-  async function entry(file,e,type='application/octet-stream'){const h=new Uint8Array(await file.slice(e.lo,e.lo+30).arrayBuffer()),v=new DataView(h.buffer);if(h.length<30||v.getUint32(0,true)!==0x04034b50)throw new Error('A file in the backup is damaged.');const s=e.lo+30+v.getUint16(26,true)+v.getUint16(28,true);return file.slice(s,s+e.cs,type)}
-  function walletEntries(){const out=[];if(typeof window.walletItemKey!=='function')return out;(window.TICKET_WALLET||[]).forEach(g=>(g.items||[]).forEach(i=>out.push({key:window.walletItemKey(g.group,i),title:i.title||'',date:i.date||''})));return out}
-  function relink(m){if(!m.linkedWalletKey)return'';const all=walletEntries();if(all.some(x=>x.key===m.linkedWalletKey))return m.linkedWalletKey;let c=all.filter(x=>norm(x.title)===norm(m.name));if(m.date){const d=c.filter(x=>norm(x.date)===norm(m.date));if(d.length)c=d}return c.length===1?c[0].key:m.linkedWalletKey}
-  const sig=t=>[t.linkedWalletKey||'',norm(t.name),norm(t.fileName),Number(t.size)||0,t.type||''].join('|');
-  async function restore(file){if(busy||!file)return;if(!confirm('Restore this Wallet backup? Existing files will stay in place and matching duplicates will be skipped.'))return;try{setBusy(true,'Reading backup…');const dir=await directory(file),me=dir.get('manifest.json');if(!me)throw new Error('This ZIP does not contain an Italy 2026 Wallet backup.');const mb=await entry(file,me,'application/json');if(await crc(mb)!==me.crc)throw new Error('The backup manifest failed its integrity check.');const m=JSON.parse(await mb.text());if(m.format!==FORMAT||m.version!==VERSION||!Array.isArray(m.files))throw new Error('This is not a supported Italy 2026 Wallet backup.');const existing=await window.getImportedTickets(),seen=new Set(existing.map(sig));let added=0,skipped=0,recovered=0;for(let i=0;i<m.files.length;i++){const meta=m.files[i],e=dir.get(meta.entry);status(`Restoring… ${i+1} of ${m.files.length}`);if(!e)throw new Error(`Missing ticket file: ${meta.fileName||meta.entry}`);const b=await entry(file,e,meta.type||'application/octet-stream'),sum=await crc(b);if(sum!==e.crc||sum!==(Number(meta.crc32)>>>0))throw new Error(`Integrity check failed: ${meta.fileName||meta.entry}`);const key=relink(meta),r={name:meta.name||meta.fileName||'Restored ticket',category:meta.category||'Other',date:meta.date||'',time:meta.time||'',notes:meta.notes||'',linkedWalletKey:key,fileName:meta.fileName||safe(meta.name),type:meta.type||b.type||'application/octet-stream',size:b.size,blob:b,createdAt:Number(meta.createdAt)||Date.now()},s=sig(r);if(seen.has(s)){skipped++;continue}await window.saveImportedTicket(r);seen.add(s);added++;if(meta.linkedWalletKey&&!walletEntries().some(x=>x.key===key))recovered++}await window.renderWallet?.();await decorateMore();const msg=[`${added} restored`,skipped?`${skipped} duplicate${skipped===1?'':'s'} skipped`:'',recovered?`${recovered} shown in Recovered files`:''].filter(Boolean).join(' · ');status(`Restore complete · ${msg}`);alert(`Wallet restore complete.\n\n${msg}`)}catch(e){console.error(e);alert(e.message||'The Wallet backup could not be restored.');status('Restore was not completed.')}finally{setBusy(false)}}
+  function setBusy(v, t = '') {
+    busy = v;
+    document.querySelectorAll('[data-wallet-backup],[data-wallet-restore]').forEach(b => b.disabled = v);
+    if (t) status(t);
+  }
 
-  async function stats(){try{const a=await window.getImportedTickets();return{count:a.length,bytes:a.reduce((s,t)=>s+(Number(t.size)||Number(t.blob?.size)||0),0)}}catch{return null}}
-  async function decorateMore(){styles();const more=document.getElementById('more');if(!more||typeof window.getImportedTickets!=='function')return;more.querySelector('.wallet-backup-card')?.remove();const st=await stats(),last=(()=>{try{return localStorage.getItem(LAST)}catch{return null}})(),when=last?new Date(last).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'Not backed up yet',card=document.createElement('section');card.className='info-card wallet-backup-card';card.id='walletBackupCard';card.innerHTML=`<div class="wallet-backup-head"><div><strong>Data & Backup</strong><div class="small">Protect your locally stored ticket files</div></div><span class="wallet-backup-count">${st?`${st.count} ${st.count===1?'file':'files'}`:'Unavailable'}</span></div><div class="small" style="margin-top:8px">${st?(st.count?`${fmtSize(st.bytes)} stored only on this device.`:'No private ticket files are stored yet.'):'Private Wallet storage could not be read.'}</div><div class="wallet-backup-actions"><button class="primary" data-wallet-backup ${!st||!st.count?'disabled':''}>Back Up Wallet</button><button class="secondary" data-wallet-restore ${!st?'disabled':''}>Restore Wallet</button><input class="hidden" type="file" accept=".zip,application/zip" data-wallet-restore-input></div><div class="small wallet-backup-status" data-wallet-backup-status>Last backup: ${esc(when)}</div>`;const app=more.querySelector('.app-status-card');app?more.insertBefore(card,app):more.appendChild(card);card.querySelector('[data-wallet-backup]')?.addEventListener('click',backup);const input=card.querySelector('[data-wallet-restore-input]');card.querySelector('[data-wallet-restore]')?.addEventListener('click',()=>!busy&&input.click());input?.addEventListener('change',e=>{const f=e.target.files?.[0];e.target.value='';if(f)restore(f)})}
-  function decorateWallet(){styles();const w=document.getElementById('wallet'),content=document.getElementById('walletContent');if(!w||!content)return;w.querySelector('.wallet-backup-link')?.remove();const row=document.createElement('div');row.className='wallet-backup-link';row.innerHTML='Ticket files are stored locally on this device. <button type="button">Backup & restore</button>';content.insertAdjacentElement('afterend',row);row.querySelector('button').addEventListener('click',()=>{window.showView?.('more');setTimeout(async()=>{await decorateMore();const c=document.getElementById('walletBackupCard');c?.scrollIntoView({behavior:'smooth',block:'center'});c?.classList.add('wallet-backup-target');setTimeout(()=>c?.classList.remove('wallet-backup-target'),2200)},80)})}
+  function table() {
+    if (crcTable) return crcTable;
+    crcTable = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      crcTable[n] = c >>> 0;
+    }
+    return crcTable;
+  }
 
-  const rm=window.renderMore;if(typeof rm==='function')window.renderMore=function(...a){const r=rm.apply(this,a);Promise.resolve(r).then(()=>requestAnimationFrame(decorateMore));return r};
-  const rw=window.renderWallet;if(typeof rw==='function')window.renderWallet=async function(...a){const r=await rw.apply(this,a);decorateWallet();return r};
-  document.addEventListener('click',e=>{if(e.target.closest('[data-target="more"]'))setTimeout(decorateMore,0);if(e.target.closest('[data-target="wallet"]'))setTimeout(decorateWallet,0)});
-  decorateMore();decorateWallet();
+  async function crc(blob) {
+    let c = 0xffffffff;
+    const t = table();
+    const r = blob.stream().getReader();
+    for (;;) {
+      const { value, done } = await r.read();
+      if (done) break;
+      for (const b of value) c = t[(c ^ b) & 255] ^ (c >>> 8);
+    }
+    return (c ^ 0xffffffff) >>> 0;
+  }
+
+  function dos(d = new Date()) {
+    const y = Math.max(1980, Math.min(2107, d.getFullYear()));
+    return {
+      time: (d.getHours() << 11) | (d.getMinutes() << 5) | Math.floor(d.getSeconds() / 2),
+      date: ((y - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()
+    };
+  }
+
+  function local(e, n) {
+    const a = new Uint8Array(30 + n.length);
+    const v = new DataView(a.buffer);
+    v.setUint32(0, 0x04034b50, true);
+    v.setUint16(4, 20, true);
+    v.setUint16(6, 0x0800, true);
+    v.setUint16(10, e.time, true);
+    v.setUint16(12, e.date, true);
+    v.setUint32(14, e.crc, true);
+    v.setUint32(18, e.size, true);
+    v.setUint32(22, e.size, true);
+    v.setUint16(26, n.length, true);
+    a.set(n, 30);
+    return a;
+  }
+
+  function central(e, n, o) {
+    const a = new Uint8Array(46 + n.length);
+    const v = new DataView(a.buffer);
+    v.setUint32(0, 0x02014b50, true);
+    v.setUint16(4, 20, true);
+    v.setUint16(6, 20, true);
+    v.setUint16(8, 0x0800, true);
+    v.setUint16(12, e.time, true);
+    v.setUint16(14, e.date, true);
+    v.setUint32(16, e.crc, true);
+    v.setUint32(20, e.size, true);
+    v.setUint32(24, e.size, true);
+    v.setUint16(28, n.length, true);
+    v.setUint32(42, o, true);
+    a.set(n, 46);
+    return a;
+  }
+
+  function zip(entries) {
+    const enc = new TextEncoder();
+    const parts = [];
+    const cd = [];
+    let off = 0;
+    for (const e of entries) {
+      const n = enc.encode(e.name);
+      const h = local(e, n);
+      parts.push(h, e.blob);
+      cd.push(central(e, n, off));
+      off += h.length + e.size;
+    }
+    const cdoff = off;
+    const cdsize = cd.reduce((s, a) => s + a.length, 0);
+    parts.push(...cd);
+    const end = new Uint8Array(22);
+    const v = new DataView(end.buffer);
+    v.setUint32(0, 0x06054b50, true);
+    v.setUint16(8, entries.length, true);
+    v.setUint16(10, entries.length, true);
+    v.setUint32(12, cdsize, true);
+    v.setUint32(16, cdoff, true);
+    parts.push(end);
+    return new Blob(parts, { type: 'application/zip' });
+  }
+
+  async function makeBackup() {
+    const tickets = await window.getImportedTickets();
+    if (!tickets.length) throw new Error('There are no locally saved ticket files to back up yet.');
+    const stamp = dos();
+    const entries = [];
+    const files = [];
+
+    for (let i = 0; i < tickets.length; i++) {
+      const t = tickets[i];
+      const b = t.blob instanceof Blob ? t.blob : new Blob([t.blob], { type: t.type || 'application/octet-stream' });
+      status(`Preparing backup… ${i + 1} of ${tickets.length}`);
+      const name = `files/${String(i + 1).padStart(3, '0')}-${safe(t.fileName || t.name)}`;
+      const sum = await crc(b);
+      entries.push({ name, blob: b, size: b.size, crc: sum, time: stamp.time, date: stamp.date });
+      files.push({
+        entry: name,
+        crc32: sum,
+        name: t.name || '',
+        category: t.category || 'Other',
+        date: t.date || '',
+        time: t.time || '',
+        notes: t.notes || '',
+        linkedWalletKey: t.linkedWalletKey || '',
+        fileName: t.fileName || safe(t.name),
+        type: t.type || b.type || 'application/octet-stream',
+        size: b.size,
+        createdAt: Number(t.createdAt) || Date.now()
+      });
+    }
+
+    const m = new Blob([JSON.stringify({
+      format: FORMAT,
+      version: VERSION,
+      createdAt: new Date().toISOString(),
+      files
+    }, null, 2)], { type: 'application/json' });
+    const me = { name: 'manifest.json', blob: m, size: m.size, crc: await crc(m), time: stamp.time, date: stamp.date };
+    return { blob: zip([me, ...entries]), count: tickets.length };
+  }
+
+  async function backup() {
+    if (busy) return;
+    try {
+      setBusy(true, 'Preparing backup…');
+      const { blob, count } = await makeBackup();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Italy-2026-Wallet-Backup-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
+      const now = new Date().toISOString();
+      try { localStorage.setItem(LAST, now); } catch {}
+      await decorateMore();
+      status(`Backup created · ${count} ${count === 1 ? 'file' : 'files'}`);
+    } catch (e) {
+      console.error(e);
+      alert(e.message || 'The Wallet backup could not be created.');
+      status('Backup was not created.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function directory(file) {
+    if (file.size < 22) throw new Error('This is not a valid Wallet backup.');
+    const start = Math.max(0, file.size - 65557);
+    const tail = new Uint8Array(await file.slice(start).arrayBuffer());
+    const tv = new DataView(tail.buffer);
+    let p = -1;
+    for (let i = tail.length - 22; i >= 0; i--) {
+      if (tv.getUint32(i, true) === 0x06054b50) {
+        p = i;
+        break;
+      }
+    }
+    if (p < 0) throw new Error('The backup ZIP is incomplete or damaged.');
+
+    const count = tv.getUint16(p + 10, true);
+    const size = tv.getUint32(p + 12, true);
+    const off = tv.getUint32(p + 16, true);
+    const bytes = new Uint8Array(await file.slice(off, off + size).arrayBuffer());
+    const v = new DataView(bytes.buffer);
+    const dec = new TextDecoder();
+    const map = new Map();
+    let x = 0;
+
+    for (let i = 0; i < count; i++) {
+      if (v.getUint32(x, true) !== 0x02014b50) throw new Error('The backup ZIP directory is damaged.');
+      const flags = v.getUint16(x + 8, true);
+      const method = v.getUint16(x + 10, true);
+      const sum = v.getUint32(x + 16, true);
+      const cs = v.getUint32(x + 20, true);
+      const us = v.getUint32(x + 24, true);
+      const nl = v.getUint16(x + 28, true);
+      const el = v.getUint16(x + 30, true);
+      const cl = v.getUint16(x + 32, true);
+      const lo = v.getUint32(x + 42, true);
+      const name = dec.decode(bytes.slice(x + 46, x + 46 + nl));
+      if (flags & 1 || method !== 0) throw new Error('This backup uses an unsupported ZIP format.');
+      map.set(name, { name, crc: sum, cs, us, lo });
+      x += 46 + nl + el + cl;
+    }
+    return map;
+  }
+
+  async function entry(file, e, type = 'application/octet-stream') {
+    const h = new Uint8Array(await file.slice(e.lo, e.lo + 30).arrayBuffer());
+    const v = new DataView(h.buffer);
+    if (h.length < 30 || v.getUint32(0, true) !== 0x04034b50) throw new Error('A file in the backup is damaged.');
+    const s = e.lo + 30 + v.getUint16(26, true) + v.getUint16(28, true);
+
+    // Detach the restored file from the source ZIP before storing it.
+    // On iOS/WebKit, persisting File.slice() blobs directly can cause multiple
+    // IndexedDB records to later resolve to the same underlying source data.
+    const bytes = await file.slice(s, s + e.cs).arrayBuffer();
+    return new Blob([bytes], { type });
+  }
+
+  function walletEntries() {
+    const out = [];
+    if (typeof window.walletItemKey !== 'function') return out;
+    (window.TICKET_WALLET || []).forEach(g => (g.items || []).forEach(i => out.push({
+      key: window.walletItemKey(g.group, i),
+      title: i.title || '',
+      date: i.date || ''
+    })));
+    return out;
+  }
+
+  function relink(m) {
+    if (!m.linkedWalletKey) return '';
+    const all = walletEntries();
+    if (all.some(x => x.key === m.linkedWalletKey)) return m.linkedWalletKey;
+    let c = all.filter(x => norm(x.title) === norm(m.name));
+    if (m.date) {
+      const d = c.filter(x => norm(x.date) === norm(m.date));
+      if (d.length) c = d;
+    }
+    return c.length === 1 ? c[0].key : m.linkedWalletKey;
+  }
+
+  const sig = t => [
+    t.linkedWalletKey || '',
+    norm(t.name),
+    norm(t.fileName),
+    Number(t.size) || 0,
+    t.type || ''
+  ].join('|');
+
+  async function blobCrc(ticket) {
+    if (!ticket?.blob) return null;
+    try {
+      const b = ticket.blob instanceof Blob
+        ? ticket.blob
+        : new Blob([ticket.blob], { type: ticket.type || 'application/octet-stream' });
+      return await crc(b);
+    } catch {
+      return null;
+    }
+  }
+
+  async function removeImportedTicket(id) {
+    if (typeof window.deleteImportedTicket === 'function') {
+      await window.deleteImportedTicket(id);
+      return;
+    }
+    throw new Error('A damaged restored ticket could not be replaced safely.');
+  }
+
+  async function verifySavedTicket(id, expectedCrc, signature) {
+    let candidates = [];
+    if (id != null && typeof window.getImportedTicket === 'function') {
+      const stored = await window.getImportedTicket(id);
+      if (stored) candidates.push(stored);
+    }
+    if (!candidates.length) {
+      const all = await window.getImportedTickets();
+      candidates = all.filter(item => sig(item) === signature).sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+    }
+    for (const candidate of candidates) {
+      if (await blobCrc(candidate) === expectedCrc) return candidate;
+    }
+    return null;
+  }
+
+  async function restore(file) {
+    if (busy || !file) return;
+    if (!confirm('Restore this Wallet backup? Existing healthy files will stay in place. Matching damaged restored copies will be repaired.')) return;
+
+    try {
+      setBusy(true, 'Reading backup…');
+      const dir = await directory(file);
+      const me = dir.get('manifest.json');
+      if (!me) throw new Error('This ZIP does not contain an Italy 2026 Wallet backup.');
+
+      const mb = await entry(file, me, 'application/json');
+      if (await crc(mb) !== me.crc) throw new Error('The backup manifest failed its integrity check.');
+      const m = JSON.parse(await mb.text());
+      if (m.format !== FORMAT || m.version !== VERSION || !Array.isArray(m.files)) {
+        throw new Error('This is not a supported Italy 2026 Wallet backup.');
+      }
+
+      let existing = await window.getImportedTickets();
+      let added = 0;
+      let skipped = 0;
+      let repaired = 0;
+      let recovered = 0;
+
+      for (let i = 0; i < m.files.length; i++) {
+        const meta = m.files[i];
+        const e = dir.get(meta.entry);
+        status(`Restoring… ${i + 1} of ${m.files.length}`);
+        if (!e) throw new Error(`Missing ticket file: ${meta.fileName || meta.entry}`);
+
+        const b = await entry(file, e, meta.type || 'application/octet-stream');
+        const sum = await crc(b);
+        const expected = Number(meta.crc32) >>> 0;
+        if (sum !== e.crc || sum !== expected) {
+          throw new Error(`Integrity check failed: ${meta.fileName || meta.entry}`);
+        }
+
+        const key = relink(meta);
+        const r = {
+          name: meta.name || meta.fileName || 'Restored ticket',
+          category: meta.category || 'Other',
+          date: meta.date || '',
+          time: meta.time || '',
+          notes: meta.notes || '',
+          linkedWalletKey: key,
+          fileName: meta.fileName || safe(meta.name),
+          type: meta.type || b.type || 'application/octet-stream',
+          size: b.size,
+          blob: b,
+          createdAt: Number(meta.createdAt) || Date.now()
+        };
+        const signature = sig(r);
+        const matches = existing.filter(item => sig(item) === signature);
+
+        let healthy = null;
+        const damaged = [];
+        for (const candidate of matches) {
+          if (await blobCrc(candidate) === expected) {
+            healthy = candidate;
+            break;
+          }
+          damaged.push(candidate);
+        }
+
+        if (healthy) {
+          skipped++;
+          continue;
+        }
+
+        const newId = await window.saveImportedTicket(r);
+        const saved = await verifySavedTicket(newId, expected, signature);
+        if (!saved) {
+          if (newId != null && typeof window.deleteImportedTicket === 'function') {
+            try { await window.deleteImportedTicket(newId); } catch {}
+          }
+          throw new Error(`Verification failed after restoring: ${meta.fileName || meta.entry}`);
+        }
+
+        if (damaged.length) {
+          for (const candidate of damaged) {
+            if (candidate.id === saved.id) continue;
+            await removeImportedTicket(candidate.id);
+          }
+          repaired++;
+        } else {
+          added++;
+        }
+
+        if (meta.linkedWalletKey && !walletEntries().some(x => x.key === key)) recovered++;
+        existing = await window.getImportedTickets();
+      }
+
+      await window.renderWallet?.();
+      await decorateMore();
+      const msg = [
+        repaired ? `${repaired} repaired` : '',
+        added ? `${added} restored` : '',
+        skipped ? `${skipped} healthy duplicate${skipped === 1 ? '' : 's'} skipped` : '',
+        recovered ? `${recovered} shown in Recovered files` : ''
+      ].filter(Boolean).join(' · ') || 'No changes needed';
+
+      status(`Restore complete · ${msg}`);
+      alert(`Wallet restore complete.\n\n${msg}`);
+    } catch (e) {
+      console.error(e);
+      alert(e.message || 'The Wallet backup could not be restored.');
+      status('Restore was not completed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function stats() {
+    try {
+      const a = await window.getImportedTickets();
+      return {
+        count: a.length,
+        bytes: a.reduce((s, t) => s + (Number(t.size) || Number(t.blob?.size) || 0), 0)
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async function decorateMore() {
+    styles();
+    const more = document.getElementById('more');
+    if (!more || typeof window.getImportedTickets !== 'function') return;
+    more.querySelector('.wallet-backup-card')?.remove();
+
+    const st = await stats();
+    const last = (() => {
+      try { return localStorage.getItem(LAST); } catch { return null; }
+    })();
+    const when = last
+      ? new Date(last).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+      : 'Not backed up yet';
+
+    const card = document.createElement('section');
+    card.className = 'info-card wallet-backup-card';
+    card.id = 'walletBackupCard';
+    card.innerHTML = `<div class="wallet-backup-head"><div><strong>Data & Backup</strong><div class="small">Protect your locally stored ticket files</div></div><span class="wallet-backup-count">${st ? `${st.count} ${st.count === 1 ? 'file' : 'files'}` : 'Unavailable'}</span></div><div class="small" style="margin-top:8px">${st ? (st.count ? `${fmtSize(st.bytes)} stored only on this device.` : 'No private ticket files are stored yet.') : 'Private Wallet storage could not be read.'}</div><div class="wallet-backup-actions"><button class="primary" data-wallet-backup ${!st || !st.count ? 'disabled' : ''}>Back Up Wallet</button><button class="secondary" data-wallet-restore ${!st ? 'disabled' : ''}>Restore Wallet</button><input class="hidden" type="file" accept=".zip,application/zip" data-wallet-restore-input></div><div class="small wallet-backup-status" data-wallet-backup-status>Last backup: ${esc(when)}</div>`;
+
+    const app = more.querySelector('.app-status-card');
+    app ? more.insertBefore(card, app) : more.appendChild(card);
+    card.querySelector('[data-wallet-backup]')?.addEventListener('click', backup);
+    const input = card.querySelector('[data-wallet-restore-input]');
+    card.querySelector('[data-wallet-restore]')?.addEventListener('click', () => !busy && input.click());
+    input?.addEventListener('change', e => {
+      const f = e.target.files?.[0];
+      e.target.value = '';
+      if (f) restore(f);
+    });
+  }
+
+  function decorateWallet() {
+    styles();
+    const w = document.getElementById('wallet');
+    const content = document.getElementById('walletContent');
+    if (!w || !content) return;
+    w.querySelector('.wallet-backup-link')?.remove();
+
+    const row = document.createElement('div');
+    row.className = 'wallet-backup-link';
+    row.innerHTML = 'Ticket files are stored locally on this device. <button type="button">Backup & restore</button>';
+    content.insertAdjacentElement('afterend', row);
+    row.querySelector('button').addEventListener('click', () => {
+      window.showView?.('more');
+      setTimeout(async () => {
+        await decorateMore();
+        const c = document.getElementById('walletBackupCard');
+        c?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        c?.classList.add('wallet-backup-target');
+        setTimeout(() => c?.classList.remove('wallet-backup-target'), 2200);
+      }, 80);
+    });
+  }
+
+  const rm = window.renderMore;
+  if (typeof rm === 'function') {
+    window.renderMore = function(...a) {
+      const r = rm.apply(this, a);
+      Promise.resolve(r).then(() => requestAnimationFrame(decorateMore));
+      return r;
+    };
+  }
+
+  const rw = window.renderWallet;
+  if (typeof rw === 'function') {
+    window.renderWallet = async function(...a) {
+      const r = await rw.apply(this, a);
+      decorateWallet();
+      return r;
+    };
+  }
+
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-target="more"]')) setTimeout(decorateMore, 0);
+    if (e.target.closest('[data-target="wallet"]')) setTimeout(decorateWallet, 0);
+  });
+
+  decorateMore();
+  decorateWallet();
 })();
