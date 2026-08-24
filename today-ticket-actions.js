@@ -3,8 +3,6 @@
 
   let scheduled = false;
   let runToken = 0;
-  const originalRenderHome = window.renderHome;
-
   function ensureStyles() {
     if (document.getElementById("today-ticket-actions-styles")) return;
     const style = document.createElement("style");
@@ -32,9 +30,12 @@
   }
 
   async function openDirectTicket(id) {
+    if (typeof window.openImportedTicket === "function") {
+      window.openImportedTicket(id);
+      return;
+    }
     const popup = window.open("", "_blank");
     try {
-      if (typeof window.getImportedTicket !== "function") throw new Error("Ticket reader unavailable");
       const ticket = await window.getImportedTicket(id);
       if (!ticket?.blob) throw new Error("Ticket not found");
       const url = URL.createObjectURL(ticket.blob);
@@ -112,13 +113,7 @@
     requestAnimationFrame(run);
   }
 
-  if (typeof originalRenderHome === "function") {
-    window.renderHome = function(...args) {
-      const result = originalRenderHome.apply(this, args);
-      schedule();
-      return result;
-    };
-  }
+  document.addEventListener("italy:home-rendered",schedule);
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") schedule();
