@@ -72,14 +72,7 @@
   style.textContent = '.trip-ticket-target{box-shadow:0 0 0 3px rgba(20,63,49,.22),var(--shadow)!important;transition:box-shadow .25s ease}';
   document.head.appendChild(style);
 
-  const original = window.renderTrip;
-  if (typeof original === 'function') {
-    window.renderTrip = function(...args) {
-      const result = original.apply(this, args);
-      requestAnimationFrame(decorateTrip);
-      return result;
-    };
-  }
+  document.addEventListener('italy:trip-rendered', () => requestAnimationFrame(decorateTrip));
   document.addEventListener('click', event => {
     if (event.target.closest('[data-target="trip"]')) setTimeout(decorateTrip, 0);
   });
