@@ -570,23 +570,8 @@
     });
   }
 
-  const rm = window.renderMore;
-  if (typeof rm === 'function') {
-    window.renderMore = function(...a) {
-      const r = rm.apply(this, a);
-      Promise.resolve(r).then(() => requestAnimationFrame(decorateMore));
-      return r;
-    };
-  }
-
-  const rw = window.renderWallet;
-  if (typeof rw === 'function') {
-    window.renderWallet = async function(...a) {
-      const r = await rw.apply(this, a);
-      decorateWallet();
-      return r;
-    };
-  }
+  document.addEventListener('italy:more-rendered', () => requestAnimationFrame(decorateMore));
+  document.addEventListener('italy:wallet-rendered', () => requestAnimationFrame(decorateWallet));
 
   document.addEventListener('click', e => {
     if (e.target.closest('[data-target="more"]')) setTimeout(decorateMore, 0);
