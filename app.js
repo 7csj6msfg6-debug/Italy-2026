@@ -957,13 +957,56 @@ function guidePlanOrigin(city){
   const exact=GUIDE_DAY_ANCHORS[todayISO()];
   return exact&&exact.city===city?{...exact}:{...GUIDE_LOCATION_ANCHORS.plan[city]};
 }
+function guideAreaEstimate(place){
+  const city=place?.city||'',text=`${place?.mealWindow||''} ${place?.notes||''}`.toLowerCase();
+  const areas={
+    Florence:[
+      [/smn|santa maria novella/,{lat:43.7763,lng:11.2480}],
+      [/sant.?ambrogio/,{lat:43.7714,lng:11.2680}],
+      [/santo spirito|oltrarno/,{lat:43.7678,lng:11.2480}]
+    ],
+    Rome:[
+      [/cipro|vatican|prati|piazza cavour/,{lat:41.9075,lng:12.4580}],
+      [/trastevere|porta portese|portuense/,{lat:41.8838,lng:12.4692}],
+      [/testaccio|ostiense/,{lat:41.8757,lng:12.4781}],
+      [/termini|esquilino/,{lat:41.8975,lng:12.5010}],
+      [/piazza del popolo/,{lat:41.9107,lng:12.4764}],
+      [/campo de.? fiori|pantheon|navona|ghetto/,{lat:41.8969,lng:12.4752}],
+      [/monteverde|casaletto/,{lat:41.8727,lng:12.4391}],
+      [/centocelle/,{lat:41.8785,lng:12.5660}]
+    ],
+    Naples:[
+      [/centrale|garibaldi/,{lat:40.8528,lng:14.2690}],
+      [/sanit[aà]/,{lat:40.8600,lng:14.2530}],
+      [/vomero/,{lat:40.8424,lng:14.2320}],
+      [/mergellina|chiaia/,{lat:40.8285,lng:14.2220}],
+      [/pignasecca|toledo/,{lat:40.8446,lng:14.2470}],
+      [/municipio|quartieri spagnoli/,{lat:40.8395,lng:14.2495}],
+      [/centro storico|tribunali|spaccanapoli|san gregorio/,{lat:40.8508,lng:14.2570}]
+    ],
+    Capri:[
+      [/marina grande/,{lat:40.5564,lng:14.2422}],
+      [/anacapri/,{lat:40.5550,lng:14.2191}],
+      [/capri town|piazzetta/,{lat:40.5508,lng:14.2426}]
+    ]
+  };
+  const explicit={
+    'rome-0920-dinner-cesare-pellegrino':{lat:41.8727,lng:12.4391},
+    'rome-0921-pizza-180g':{lat:41.8785,lng:12.5660},
+    'rome-0922-pizza-seu':{lat:41.8740,lng:12.4700},
+    'florence-any-sostanza':{lat:43.7728,lng:11.2477}
+  };
+  const match=explicit[place?.id]||(areas[city]||[]).find(([pattern])=>pattern.test(text))?.[1]||GUIDE_LOCATION_ANCHORS.hotels[city]||null;
+  return match?{...match,approximate:true}:null;
+}
 function guideCoordinates(place){
   const lat=Number(place?.lat),lng=Number(place?.lng);
-  if(Number.isFinite(lat)&&Number.isFinite(lng))return {lat,lng};
+  if(Number.isFinite(lat)&&Number.isFinite(lng))return {lat,lng,approximate:false};
   const url=String(place?.maps||'');
   const patterns=[/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,/query=(-?\d+(?:\.\d+)?)(?:,|%2C)(-?\d+(?:\.\d+)?)/i,/q=(-?\d+(?:\.\d+)?)(?:,|%2C)(-?\d+(?:\.\d+)?)/i];
-  for(const pattern of patterns){const match=url.match(pattern);if(match)return {lat:Number(match[1]),lng:Number(match[2])}}
-  return GUIDE_PLACE_COORDS[`${place?.city||''}|${place?.name||''}`]||null;
+  for(const pattern of patterns){const match=url.match(pattern);if(match)return {lat:Number(match[1]),lng:Number(match[2]),approximate:false}}
+  const saved=GUIDE_PLACE_COORDS[`${place?.city||''}|${place?.name||''}`];
+  return saved?{...saved,approximate:false}:guideAreaEstimate(place);
 }
 function guideDistanceKm(a,b){
   const toRad=value=>value*Math.PI/180,R=6371;
@@ -1025,9 +1068,16 @@ const NAPLES_CAPRI_FOOD_GUIDE=[{"id":"naples-0924-lunch-da-michele","name":"L’
 const CITY_FOOD_EXTRAS={"Venice":{"signatures":["🥪 Bar All’Arco + Al Mercà Rialto food crawl","🦞 Seafood dinner at Osteria alle Testiere","🍮 Classic tiramisu at I Tre Mercanti","🍨 Suso — Crema del Doge","🌙 Cannaregio food night: Vino Vero → Al Timon → Osteria al Cicheto"],"skip":["Do not cross Venice solely for optional Dorsoduro food stops.","Skip very long queues at Suso or I Tre Mercanti; use them when the line is reasonable.","Restaurants in St. Mark’s Square with multilingual tourist menus or aggressive hosts.","Do not treat every recommendation as mandatory; prioritize what fits your current route and appetite."],"five":["🥪 Bar All’Arco + Al Mercà crawl","🦞 Osteria alle Testiere — special seafood dinner","🍮 I Tre Mercanti — classic tiramisu","🍨 Suso — Crema del Doge","🌙 Cannaregio food night"]},"Florence":{"signatures":["🥪 Schiacciata at I’ Girone De’ Ghiotti","🌭 Lampredotto at Sergio Pollini","🍗 Pollo al Burro at Trattoria Sostanza","🍨 Gelateria della Passera","🍷 Oltrarno wine experience at Le Volpi e l’Uva","🪟 Wine through a historic buchetta del vino","🥩 One dedicated Bistecca alla Fiorentina meal"],"skip":["Do not treat all 35 recommendations as itinerary stops.","Avoid obvious tourist-trap restaurants immediately surrounding major landmarks unless they independently earned a place in the guide.","Do not prioritize proximity over quality just because the hotel is beside the Duomo.","Do not visit every wine window; Babae and Cantina de’ Pucci are the priorities.","Do not overload September 19 before or after the booked 2:30 PM Tuscany Wine Experience."],"five":["🥪 I’ Girone De’ Ghiotti — schiacciata","🍗 Trattoria Sostanza — Pollo al Burro","🍝 Vini e Vecchi Sapori — traditional Tuscan dinner","🍨 Gelateria della Passera","🪟 Babae or Cantina de’ Pucci — wine window experience"]},"Rome":{"signatures":["🍝 Armando al Pantheon — classic Roman institution","🟠 Supplizio — classic supplì","🥪 Trapizzino — unique Roman street food","🍕 Pizzarium — pizza al taglio","🍨 Otaleg — artisanal gelato","🥐 Regoli — maritozzo","🍷 Il Goccetto / 🍸 Drink Kong — drinks"],"skip":["Rome strategy: use neighborhood picks first; use destination picks only when you deliberately want to make food the activity.","Do not wait an hour-plus for Da Enzo if the queue is ridiculous.","Do not force Testaccio into Sep 23; market stops are optional and daytime-sensitive.","Do not squeeze a major meal between the 9:00 AM Vatican Museums and 1:30 PM St. Peter’s tickets unless timing genuinely works.","Avoid generic tourist-menu restaurants immediately surrounding major landmarks."],"five":["🍝 Armando al Pantheon","🟠 Supplizio","🥪 Trapizzino","🍕 Pizzarium","🍨 Otaleg","🥐 Regoli","🍷 Il Goccetto / 🍸 Drink Kong"]},"Naples":{"signatures":["🍕 Starita — Montanara + pizza","🍕 Da Michele — classic Margherita","🍝 La Locanda Gesù Vecchio — ragù / Genovese","🥪 La Masardona — pizza fritta","🥐 Sfogliatelle Attanasio — sfogliatella","☕ Caffè Mexico — Neapolitan espresso","🏝️ Salumeria Da Aldo — Caprese panino","🍝 Verginiello — Ravioli Capresi"],"skip":["Naples strategy: sample different parts of Neapolitan food culture rather than using every meal opportunity for pizza.","Do not wait excessively at Da Michele or Sorbillo when excellent alternatives are nearby.","Capri: protect the 2:00 PM boat tour; favor Da Aldo or Al Buco when timing is tight.","Da Gelsomina is a special destination meal, not a default Capri lunch on this itinerary.","Friggitoria Vomero is only for when you are already in Vomero.","Sep 26 lunch is included with the Pompeii + Vesuvius excursion; do not plan another lunch."],"five":["🍕 Starita — Montanara + pizza","🍝 La Locanda Gesù Vecchio — traditional Naples dinner","🥪 La Masardona — pizza fritta","🥐 Sfogliatelle Attanasio + ☕ Caffè Mexico","🏝️ Salumeria Da Aldo / 🍝 Verginiello in Capri"]}};
 const FLORENCE_FOOD_BUCKET=CITY_FOOD_EXTRAS.Florence.five;
 const VENICE_FOOD_BUCKET=CITY_FOOD_EXTRAS.Venice.five;
-const FOOD_GUIDE_VERSION=7;
+const FOOD_GUIDE_VERSION=8;
+function guideNameKey(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function guidePlaceKey(place){return `${place?.city||''}|${guideNameKey(place?.name)}`}
+function normalizedGuidePlace(place){
+  const notes=String(place?.notes||'');
+  const official=!!place?.official||(/\bofficial pick\b/i.test(notes)&&!/rather than (?:an? )?official pick/i.test(notes));
+  return {...place,official};
+}
 function ensureFoodGuides(){
-  const curated=[...VENICE_FOOD_GUIDE,...FLORENCE_FOOD_GUIDE,...ROME_FOOD_GUIDE,...NAPLES_CAPRI_FOOD_GUIDE];
+  const curated=[...VENICE_FOOD_GUIDE,...FLORENCE_FOOD_GUIDE,...ROME_FOOD_GUIDE,...NAPLES_CAPRI_FOOD_GUIDE].map(normalizedGuidePlace);
   const storedVersion=Number(localStorage.getItem(P+'food-guide-version')||0);
   if(storedVersion<FOOD_GUIDE_VERSION){
     const next=curated.map(place=>({...place}));
@@ -1035,26 +1085,36 @@ function ensureFoodGuides(){
     localStorage.setItem(P+'food-guide-version',String(FOOD_GUIDE_VERSION));
     return next;
   }
-  return guideLoad('guide-places',[]);
+  const stored=guideLoad('guide-places',[]),normalized=stored.map(normalizedGuidePlace);
+  if(normalized.some((place,index)=>place.official!==stored[index]?.official))guideSave('guide-places',normalized);
+  return normalized;
 }
 function ensureVeniceFoodGuide(){return ensureFoodGuides()}
-function foodRankLabel(place){return place.rank===1?'🥇 Top Pick':place.rank===2?'🥈 Alternative':'🥉 Another Option'}
-function foodCategoryIcon(category){return ({Breakfast:'☕',Coffee:'☕',Lunch:'🍝','Small Bite':'🥪',Dinner:'🍽️',Gelato:'🍨',Dessert:'🍮',Bar:'🍷'})[category]||'🍴'}
-function foodCategoryOrder(category){return ({Coffee:1,Breakfast:2,Lunch:3,'Small Bite':4,Gelato:5,Dessert:6,Bar:7,Dinner:8})[category]||20}
+function foodRankLabel(place){const rank=place._displayRank||place.rank;return rank===1?'🥇 Top Pick':rank===2?'🥈 Alternative':'🥉 Another Option'}
+function foodCategoryIcon(category){return ({Breakfast:'☕',Coffee:'☕',Lunch:'🍝','Small Bite':'🥪',Dinner:'🍽️',Gelato:'🍨',Dessert:'🍮',Pizza:'🍕',Bar:'🍷'})[category]||'🍴'}
+function foodCategoryOrder(category){return ({Coffee:1,Breakfast:2,Lunch:3,'Small Bite':4,Pizza:5,Gelato:6,Dessert:7,Bar:8,Dinner:9})[category]||20}
 function foodBucketState(city='Venice'){return guideLoad(`${city.toLowerCase()}-food-bucket`,{})}
 function setFoodBucketState(value,city='Venice'){guideSave(`${city.toLowerCase()}-food-bucket`,value)}
+const TODAY_FOOD_CITIES={
+  '2026-09-17':['Venice','Florence'],
+  '2026-09-20':['Florence','Rome'],
+  '2026-09-24':['Rome','Naples'],
+  '2026-09-25':['Capri','Naples']
+};
 function todayFoodHTML(day){
-  const places=ensureFoodGuides().filter(p=>p.plannedDay===day.date&&p.city===day.city);
+  const cities=TODAY_FOOD_CITIES[day.date]||[day.city];
+  const places=ensureFoodGuides().filter(p=>p.plannedDay===day.date&&cities.includes(p.city));
   if(!places.length)return '';
-  const grouped={};places.forEach(p=>(grouped[p.category]||=[]).push(p));
-  const categories=Object.keys(grouped).sort((a,b)=>foodCategoryOrder(a)-foodCategoryOrder(b));
+  const grouped={};
+  places.forEach(p=>{const key=`${p.city}|${p.category}`;(grouped[key]||=[]).push(p)});
+  const groups=Object.entries(grouped).sort((a,b)=>cities.indexOf(a[1][0].city)-cities.indexOf(b[1][0].city)||foodCategoryOrder(a[1][0].category)-foodCategoryOrder(b[1][0].category));
   return `<section class="today-food-section">
-    <div class="today-food-heading"><div><span>🍴</span><div><div class="focus-label">CURATED FOR ${day.city.toUpperCase()}</div><h2>Today’s food suggestions</h2></div></div><button class="text-button" data-food-guide-city="${day.city}">View all</button></div>
-    <div class="today-food-groups">${categories.map(category=>{
-      const items=grouped[category].sort((a,b)=>(a.rank||9)-(b.rank||9));
-      const top=items[0],alts=items.slice(1);
+    <div class="today-food-heading"><div><span>🍴</span><div><div class="focus-label">CURATED FOR ${cities.map(city=>city.toUpperCase()).join(' + ')}</div><h2>Today’s food suggestions</h2></div></div><button class="text-button" data-food-guide-city="${day.city}">View all</button></div>
+    <div class="today-food-groups">${groups.map(([,group])=>{
+      const items=group.sort((a,b)=>(a.rank||9)-(b.rank||9)||a.name.localeCompare(b.name)).map((p,index)=>({...p,_displayRank:index+1}));
+      const top=items[0],alts=items.slice(1),category=top.category;
       return `<article class="today-food-group">
-        <div class="today-food-category"><span>${foodCategoryIcon(category)}</span><div><strong>${category}</strong><small>${escapeHTML(top.mealWindow||'')}</small></div></div>
+        <div class="today-food-category"><span>${foodCategoryIcon(category)}</span><div><strong>${cities.length>1?`${escapeHTML(top.city)} · `:''}${escapeHTML(category)}</strong><small>${escapeHTML(top.mealWindow||'')}</small></div></div>
         <div class="today-food-top"><div><span class="food-rank top">${foodRankLabel(top)}</span><h3>${escapeHTML(top.name)}</h3>${top.notes?`<p>${escapeHTML(top.notes)}</p>`:''}</div><a href="${escapeHTML(guideMapsUrl(top))}" target="_blank" rel="noopener">Maps</a></div>
         ${alts.length?`<div class="today-food-alts"><span>Alternatives</span>${alts.map(p=>`<a href="${escapeHTML(guideMapsUrl(p))}" target="_blank" rel="noopener"><strong>${escapeHTML(p.name)}</strong><small>${foodRankLabel(p)}</small></a>`).join('')}</div>`:''}
       </article>`;
@@ -1065,7 +1125,7 @@ function todayFoodHTML(day){
 function renderGuide(){
   ensureFoodGuides();
   const cities=['Venice','Florence','Rome','Naples','Capri'];
-  const categories=['Breakfast','Coffee','Lunch','Dinner','Gelato','Dessert','Pizza','Bar','Shopping','Sightseeing','Other'];
+  const categories=['Breakfast','Coffee','Lunch','Small Bite','Dinner','Pizza','Gelato','Dessert','Bar','Shopping','Sightseeing','Other'];
   const expenseCategories=['Food','Transportation','Activities','Shopping','Hotel','Other'];
   const tripDays=trip.map(day=>({date:day.date,label:`${shortDate(day.date)} · ${day.city}`}));
   const todayTripDay=trip.find(day=>day.date===todayISO());
@@ -1183,7 +1243,7 @@ function renderGuide(){
     const selected=guideLoad('guide-places',[]).filter(place=>place.city===activeNearbyCity&&nearbyMatchesFilter(place));
     const unique=new Map();
     selected.forEach(place=>{
-      const key=`${place.city}|${place.name}`;
+      const key=guidePlaceKey(place);
       const existing=unique.get(key);
       if(!existing){unique.set(key,{...place,_categories:new Set([place.category]),_days:new Set(place.plannedDay?[place.plannedDay]:[])});return}
       existing._categories.add(place.category);if(place.plannedDay)existing._days.add(place.plannedDay);
@@ -1197,12 +1257,13 @@ function renderGuide(){
     const status=qs('#nearbyStatus'),results=qs('#nearbyResults');
     if(!nearbyOrigin){status.innerHTML='<strong>Choose a starting point</strong><span>Use your location, hotel, or today’s plan.</span>';results.innerHTML='';return}
     const sourceLabel=nearbyOrigin.label||(nearbySource==='current'?'Your current location':'Selected starting point');
-    const candidates=nearbyDedupedPlaces().map(place=>{const point=guideCoordinates(place);return point?{place,point,distance:guideDistanceKm(nearbyOrigin,point)}:null}).filter(Boolean).sort((a,b)=>a.distance-b.distance);
-    status.innerHTML=`<div><strong>Near ${escapeHTML(sourceLabel)}</strong><span>${escapeHTML(activeNearbyCity)} · approximate distance; Maps provides the exact route</span></div><span>${candidates.length} place${candidates.length===1?'':'s'}</span>`;
+    const candidates=nearbyDedupedPlaces().map(place=>{const point=guideCoordinates(place);return point?{place,point,distance:guideDistanceKm(nearbyOrigin,point)}:null}).filter(Boolean).sort((a,b)=>Number(a.point.approximate)-Number(b.point.approximate)||a.distance-b.distance);
+    const exactCount=candidates.filter(item=>!item.point.approximate).length,estimateCount=candidates.length-exactCount;
+    status.innerHTML=`<div><strong>Near ${escapeHTML(sourceLabel)}</strong><span>${escapeHTML(activeNearbyCity)} · approximate distance; Maps provides the exact route</span></div><span>${candidates.length} places · ${exactCount} exact${estimateCount?` · ${estimateCount} area estimate${estimateCount===1?'':'s'}`:''}</span>`;
     results.innerHTML=candidates.length?`<div class="nearby-list">${candidates.map((item,index)=>{
       const p=item.place,categories=[...p._categories],days=[...p._days].sort();
       return `<article class="nearby-card">
-        <div class="nearby-card-top"><div class="nearby-distance"><strong>${index+1}</strong><span>${escapeHTML(guideDistanceLabel(item.distance))}</span></div>${p.official?'<span class="nearby-official">Official Pick</span>':''}</div>
+        <div class="nearby-card-top"><div class="nearby-distance"><strong>${index+1}</strong><span>${item.point.approximate?'Area estimate · ':''}${escapeHTML(guideDistanceLabel(item.distance))}</span></div><div>${item.point.approximate?'<span class="nearby-estimate">Area estimate</span>':''}${p.official?'<span class="nearby-official">Official Pick</span>':''}</div></div>
         <div class="guide-place-kicker">${escapeHTML(p.city)} · ${categories.map(category=>`${foodCategoryIcon(category)} ${escapeHTML(category)}`).join(' · ')}</div>
         <h3>${escapeHTML(p.name)}</h3>
         <div class="food-place-meta">${p.price?`<span>💰 ${escapeHTML(p.price)}</span>`:''}${p.favorite?'<span>★ Favorite</span>':''}${p.worthDetour?`<span>⭐ Worth a Detour: ${escapeHTML(p.worthDetour)}</span>`:''}</div>
@@ -1219,36 +1280,57 @@ function renderGuide(){
     }));
   };
 
+  const guideContextLabel=place=>({
+    'rome-0922-bite-pizzarium':'Vatican / Prati quick food','rome-0922-bite-panificio-bonci':'Vatican / Prati quick food',
+    'rome-0922-pizza-elementare':'Trastevere pizza','rome-0922-pizza-ai-marmi':'Trastevere pizza','rome-0922-pizza-renella':'Trastevere pizza','rome-0922-pizza-seu':'Trastevere pizza',
+    'rome-0922-bite-suppli-roma':'Trastevere street food','rome-0922-bite-trapizzino':'Trastevere street food','rome-0922-bite-iacozzilli':'Trastevere street food',
+    'rome-0922-gelato-gracchi':'Prati gelato','rome-0922-gelato-neve':'Prati gelato','rome-0922-gelato-otaleg':'Trastevere gelato',
+    'rome-0923-bite-mozzico':'Central Rome quick bites','rome-0923-bite-forno-campo':'Central Rome quick bites','rome-0923-bite-filettaro':'Central Rome quick bites',
+    'rome-0923-bite-casa-manco':'Testaccio market bites','rome-0923-bite-mordi-vai':'Testaccio market bites',
+    'rome-0923-dinner-felice':'Testaccio / Ostiense dinner','rome-0923-dinner-flavio':'Testaccio / Ostiense dinner','rome-0923-dinner-scopettaro':'Testaccio / Ostiense dinner','rome-0923-dinner-pennestri':'Testaccio / Ostiense dinner',
+    'rome-0923-dinner-sostegno':'Pantheon dinner'
+  })[place.id]||'';
+  const collapseGuidePlaces=items=>{
+    const unique=new Map();
+    items.forEach(place=>{
+      const key=guidePlaceKey(place),existing=unique.get(key);
+      if(!existing){unique.set(key,{...place,_ids:[place.id],_plannedDays:place.plannedDay?[place.plannedDay]:[]});return}
+      existing._ids.push(place.id);
+      if(place.plannedDay&&!existing._plannedDays.includes(place.plannedDay))existing._plannedDays.push(place.plannedDay);
+      existing.favorite=existing.favorite||place.favorite;existing.official=existing.official||place.official;existing.topPick=existing.topPick||place.topPick;
+    });
+    return [...unique.values()].map(place=>({...place,_plannedDays:place._plannedDays.sort()}));
+  };
   const renderPlaces=()=>{
     const places=guideLoad('guide-places',[]);
     const filtered=places.filter(p=>(activeCity==='All'||p.city===activeCity||(activeCity==='Naples'&&p.city==='Capri'))&&(!placeSearch||`${p.name} ${p.city} ${p.category} ${p.notes||''}`.toLowerCase().includes(placeSearch)));
-    const favorites=places.filter(p=>p.favorite).length;
-    qs('#guidePlacesSummary').innerHTML=`<div class="guide-mini-summary"><span><strong>${places.length}</strong> saved</span><span><strong>${favorites}</strong> favorite${favorites===1?'':'s'}</span></div>`;
+    const uniquePlaces=collapseGuidePlaces(places),favorites=uniquePlaces.filter(p=>p.favorite).length;
+    qs('#guidePlacesSummary').innerHTML=`<div class="guide-mini-summary"><span><strong>${uniquePlaces.length}</strong> saved</span><span><strong>${favorites}</strong> favorite${favorites===1?'':'s'}</span></div>`;
     const sorted=[...filtered].sort((a,b)=>Number(b.favorite)-Number(a.favorite)||a.city.localeCompare(b.city)||foodCategoryOrder(a.category)-foodCategoryOrder(b.category)||(a.rank||9)-(b.rank||9)||a.name.localeCompare(b.name));
     const placeCard=p=>{
-      const day=p.plannedDay?trip.find(d=>d.date===p.plannedDay):null;
+      const plannedDays=p._plannedDays||(p.plannedDay?[p.plannedDay]:[]),ids=p._ids||[p.id],displayRank=p._displayRank||p.rank;
       return `<article class="guide-place-card ${p.topPick?'curated-top-pick':''}">
         <div class="guide-place-head">
           <div><div class="guide-place-kicker">${escapeHTML(p.city)} · ${foodCategoryIcon(p.category)} ${escapeHTML(p.category)}</div><h3>${escapeHTML(p.name)}</h3></div>
-          <button class="favorite-button ${p.favorite?'active':''}" data-favorite-place="${p.id}" aria-label="${p.favorite?'Remove favorite':'Add favorite'}">★</button>
+          <button class="favorite-button ${p.favorite?'active':''}" data-favorite-place="${p.id}" data-place-ids="${escapeHTML(ids.join(','))}" aria-label="${p.favorite?'Remove favorite':'Add favorite'}">★</button>
         </div>
-        ${p.rank?`<div class="food-rank ${p.rank===1?'top':''}">${foodRankLabel(p)}${p.rating?` · ${'⭐'.repeat(p.rating)}`:''}${p.official?' · Official Pick':''}</div>`:''}
+        ${displayRank?`<div class="food-rank ${displayRank===1?'top':''}">${foodRankLabel({...p,_displayRank:displayRank})}${p.rating?` · ${'⭐'.repeat(p.rating)}`:''}${p.official?' · Official Pick':''}</div>`:''}
         <div class="food-place-meta">${p.mealWindow?`<span>🕐 ${escapeHTML(p.mealWindow)}</span>`:''}${p.price?`<span>💰 ${escapeHTML(p.price)}</span>`:''}${p.worthDetour?`<span>⭐ Worth a Detour: ${escapeHTML(p.worthDetour)}</span>`:''}${p.reservation?`<span>⚠️ Reservation ${escapeHTML(p.reservation.toLowerCase())}</span>`:''}${p.official?`<span>✅ Official Pick</span>`:''}</div>
         ${p.why?`<div class="food-why"><strong>Why I picked it</strong><p>${escapeHTML(p.why)}</p></div>`:''}
         ${p.notes?`<p>${escapeHTML(p.notes)}</p>`:''}
         ${p.dishes?.length?`<div class="food-dishes"><strong>Recommended</strong><div>${p.dishes.map(x=>`<span>${escapeHTML(x)}</span>`).join('')}</div></div>`:''}
-        ${day?`<div class="guide-planned-day">Planned ${shortDate(p.plannedDay)} · ${escapeHTML(day.city)}</div>`:''}
+        ${plannedDays.length?`<div class="guide-planned-day">Planned ${plannedDays.map(shortDate).join(' · ')} · ${escapeHTML(p.city)}</div>`:''}
         <div class="guide-place-actions">
           <a class="primary" href="${escapeHTML(guideMapsUrl(p))}" target="_blank" rel="noopener">Maps</a>
           ${p.phone?`<a class="secondary" href="tel:${escapeHTML(p.phone.replace(/[^+\d]/g,''))}">Call</a>`:''}
           ${p.website?`<a class="secondary" href="${escapeHTML(normalizeWebUrl(p.website))}" target="_blank" rel="noopener">Website</a>`:''}
           <button class="secondary" data-edit-place="${p.id}">Edit</button>
-          <button class="secondary danger-text" data-delete-place="${p.id}">Delete</button>
+          <button class="secondary danger-text" data-delete-place="${p.id}" data-place-ids="${escapeHTML(ids.join(','))}">Delete</button>
         </div>
       </article>`;
     };
     if(sorted.length&&['Venice','Florence','Rome','Naples'].includes(activeCity)&&!placeSearch){
-      const dateRange=activeCity==='Venice'?'September 15–17':activeCity==='Florence'?'September 17–19':activeCity==='Rome'?'September 20–23':'September 24–26';
+      const dateRange=activeCity==='Venice'?'September 15–17':activeCity==='Florence'?'September 17–20':activeCity==='Rome'?'September 20–24':'September 24–26';
       const companionName=activeCity==='Naples'?'Naples & Capri':activeCity;
       const extras=CITY_FOOD_EXTRAS[activeCity];
       const dated=sorted.filter(p=>p.plannedDay).sort((a,b)=>a.plannedDay.localeCompare(b.plannedDay)||foodCategoryOrder(a.category)-foodCategoryOrder(b.category)||(a.rank||9)-(b.rank||9));
@@ -1260,9 +1342,10 @@ function renderGuide(){
       const bucket=foodBucketState(activeCity);
       qs('#guideCards').innerHTML=`<section class="venice-food-intro"><div><span>🇮🇹</span><div><div class="focus-label">${companionName.toUpperCase()} FOOD COMPANION</div><h2>${companionName}</h2><p>Your day-by-day food plan for ${dateRange}.</p></div></div></section>
         <div class="food-day-list">${days.map(date=>{
-          const dayPlaces=dated.filter(p=>p.plannedDay===date), grouped={};dayPlaces.forEach(p=>(grouped[p.category]||=[]).push(p));
-          const ordered=Object.keys(grouped).sort((a,b)=>foodCategoryOrder(a)-foodCategoryOrder(b));
-          return `<section class="food-day-section"><div class="food-day-heading"><div><span>📅</span><div><small>${shortDate(date)}</small><h3>${dayTitle(date)}</h3></div></div></div>${ordered.map(category=>`<details class="food-category-section" open><summary><span>${foodCategoryIcon(category)}</span><strong>${grouped[category][0].mealWindow?.split(' · ')[0]||category}</strong><small>${grouped[category].length} choice${grouped[category].length===1?'':'s'}</small><b>⌄</b></summary><div class="food-category-cards">${grouped[category].sort((a,b)=>(a.rank||9)-(b.rank||9)).map(placeCard).join('')}</div></details>`).join('')}</section>`;
+          const dayPlaces=dated.filter(p=>p.plannedDay===date),grouped={};
+          dayPlaces.forEach(p=>{const context=guideContextLabel(p),key=`${p.category}|${context}`;(grouped[key]||=[]).push(p)});
+          const ordered=Object.keys(grouped).sort((a,b)=>foodCategoryOrder(grouped[a][0].category)-foodCategoryOrder(grouped[b][0].category));
+          return `<section class="food-day-section"><div class="food-day-heading"><div><span>📅</span><div><small>${shortDate(date)}</small><h3>${dayTitle(date)}</h3></div></div></div>${ordered.map(key=>{const group=grouped[key].sort((a,b)=>(a.rank||9)-(b.rank||9)||a.name.localeCompare(b.name)).map((p,index)=>({...p,_displayRank:index+1})),category=group[0].category,label=guideContextLabel(group[0])||group[0].mealWindow?.split(' · ')[0]||category;return `<details class="food-category-section" open><summary><span>${foodCategoryIcon(category)}</span><strong>${escapeHTML(label)}</strong><small>${group.length} choice${group.length===1?'':'s'}</small><b>⌄</b></summary><div class="food-category-cards">${group.map(placeCard).join('')}</div></details>`}).join('')}</section>`;
         }).join('')}</div>
         ${unscheduled.length?`<section class="food-day-section food-unscheduled-section"><div class="food-day-heading"><div><span>📌</span><div><small>Saved for ${escapeHTML(companionName)}</small><h3>Unscheduled places</h3></div></div><span class="food-unscheduled-count">${unscheduled.length}</span></div><p class="food-unscheduled-note">These places are saved but do not have a planned day yet. Edit a place to add it to a specific date.</p><div class="food-category-cards">${unscheduled.map(placeCard).join('')}</div></section>`:''}
         <section class="food-companion-box"><h3>🏆 ${companionName} Signature Experiences</h3>${extras.signatures.map(x=>`<div>${escapeHTML(x)}</div>`).join('')}</section>
@@ -1270,17 +1353,18 @@ function renderGuide(){
         <section class="food-passport"><div class="food-passport-head"><span>⭐</span><div><h3>If You Only Do Five Food Things</h3><small>Your essential ${companionName} food list</small></div></div>${extras.five.map((item,i)=>`<label class="food-passport-item"><input type="checkbox" data-food-bucket="${escapeHTML(item)}" ${bucket[item]?'checked':''}><span><b>${i+1}.</b> ${escapeHTML(item)}</span></label>`).join('')}</section>`;
       qsa('[data-food-bucket]').forEach(box=>box.addEventListener('change',()=>{const state=foodBucketState(activeCity);state[box.dataset.foodBucket]=box.checked;setFoodBucketState(state,activeCity)}));
     }else{
-      qs('#guideCards').innerHTML=sorted.length?sorted.map(placeCard).join(''):`<div class="guide-empty"><strong>${places.length?'No matching places':'No saved places yet'}</strong><span>${places.length?'Try another city or search.':'Add restaurants, cafés, gelato shops and sights you want handy during the trip.'}</span></div>`;
+      const displayPlaces=collapseGuidePlaces(sorted);
+      qs('#guideCards').innerHTML=displayPlaces.length?displayPlaces.map(placeCard).join(''):`<div class="guide-empty"><strong>${places.length?'No matching places':'No saved places yet'}</strong><span>${places.length?'Try another city or search.':'Add restaurants, cafés, gelato shops and sights you want handy during the trip.'}</span></div>`;
     }
 
     qsa('[data-favorite-place]').forEach(btn=>btn.addEventListener('click',()=>{
-      const items=guideLoad('guide-places',[]), item=items.find(x=>x.id===btn.dataset.favoritePlace);if(!item)return;
-      item.favorite=!item.favorite;guideSave('guide-places',items);renderPlaces();
+      const items=guideLoad('guide-places',[]),ids=(btn.dataset.placeIds||btn.dataset.favoritePlace).split(','),matches=items.filter(x=>ids.includes(x.id));if(!matches.length)return;
+      const next=!matches.some(item=>item.favorite);matches.forEach(item=>item.favorite=next);guideSave('guide-places',items);renderPlaces();
     }));
     qsa('[data-delete-place]').forEach(btn=>btn.addEventListener('click',()=>{
-      const items=guideLoad('guide-places',[]), item=items.find(x=>x.id===btn.dataset.deletePlace);if(!item)return;
-      if(!confirm(`Delete ${item.name}?`))return;
-      guideSave('guide-places',items.filter(x=>x.id!==item.id));renderPlaces();
+      const items=guideLoad('guide-places',[]),ids=(btn.dataset.placeIds||btn.dataset.deletePlace).split(','),item=items.find(x=>ids.includes(x.id));if(!item)return;
+      if(!confirm(`Delete ${item.name}${ids.length>1?' from all planned days':''}?`))return;
+      guideSave('guide-places',items.filter(x=>!ids.includes(x.id)));renderPlaces();
     }));
     qsa('[data-edit-place]').forEach(btn=>btn.addEventListener('click',()=>openPlaceEditor(btn.dataset.editPlace)));
   };
@@ -1344,8 +1428,13 @@ function renderGuide(){
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.add('hidden')});
   qs('#savePlace').addEventListener('click',()=>{
     const name=qs('#placeName').value.trim();if(!name){qs('#placeEditorMessage').textContent='Enter a place name.';return}
-    const items=guideLoad('guide-places',[]);
-    const existing=editingPlaceId?items.find(x=>x.id===editingPlaceId):null; const value={...(existing||{}),id:editingPlaceId||guideUid(),name,city:qs('#placeCity').value,category:qs('#placeCategory').value,notes:qs('#placeNotes').value.trim(),maps:qs('#placeMaps').value.trim(),phone:qs('#placePhone').value.trim(),website:qs('#placeWebsite').value.trim(),plannedDay:qs('#placeDay').value,favorite:qs('#placeFavorite').checked};
+    const items=guideLoad('guide-places',[]),city=qs('#placeCity').value,maps=qs('#placeMaps').value.trim();
+    const existing=editingPlaceId?items.find(x=>x.id===editingPlaceId):null;
+    if(!editingPlaceId){
+      const duplicate=items.find(item=>item.city===city&&(guideNameKey(item.name)===guideNameKey(name)||(maps&&item.maps&&item.maps===maps)));
+      if(duplicate){qs('#placeEditorMessage').textContent=`${duplicate.name} is already saved in ${city}. Edit the existing place instead.`;return}
+    }
+    const value={...(existing||{}),id:editingPlaceId||guideUid(),name,city,category:qs('#placeCategory').value,notes:qs('#placeNotes').value.trim(),maps,phone:qs('#placePhone').value.trim(),website:qs('#placeWebsite').value.trim(),plannedDay:qs('#placeDay').value,favorite:qs('#placeFavorite').checked};
     const index=items.findIndex(x=>x.id===editingPlaceId);if(index>=0)items[index]=value;else items.push(value);
     guideSave('guide-places',items);overlay.classList.add('hidden');activeCity=value.city;qsa('[data-guide-city]').forEach(x=>x.classList.toggle('active',x.dataset.guideCity===activeCity));renderPlaces();
   });
