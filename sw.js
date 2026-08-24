@@ -1,6 +1,10 @@
-const CACHE = 'italy-2026-app-v30';
+const CACHE = 'italy-2026-app-v31';
 const APP_SHELL = [
   './','./index.html','./style.css','./app.js','./sept21-itinerary-update.js','./booking-sync.js','./venice-food-guide-update.js','./florence-food-guide-update.js','./rome-food-guide-update.js','./naples-capri-food-guide-update.js','./navigation-state.js','./history-aware-back.js','./today-polish.js','./wallet-polish.js','./wallet-reliability.js','./wallet-backup.js','./ticket-open.js','./today-ticket-actions.js','./calendar-icon-polish.js','./guide-collapse-default.js','./nearby-guide-focus.js','./trip-ticket-actions.js','./app-status.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'
+];
+const PDFJS_ASSETS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
 ];
 
 const TICKET_DB_NAME = 'italy2026-ticket-wallet';
@@ -82,12 +86,47 @@ async function serveTicket(request,id){
   }
 }
 
-self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)))});
+async function cachePdfAssets(cache){
+  await Promise.all(PDFJS_ASSETS.map(async asset=>{
+    try{
+      const response=await fetch(asset,{mode:'cors',cache:'no-store'});
+      if(response&&response.ok)await cache.put(asset,response);
+    }catch{}
+  }));
+}
+
+self.addEventListener('install',event=>{
+  self.skipWaiting();
+  event.waitUntil((async()=>{
+    const cache=await caches.open(CACHE);
+    await cache.addAll(APP_SHELL);
+    await cachePdfAssets(cache);
+  })());
+});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)));await self.clients.claim()})())});
 self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET')return;
   const url=new URL(request.url);
+
+  if(PDFJS_ASSETS.includes(url.href)){
+    event.respondWith((async()=>{
+      const cached=await caches.match(request);
+      if(cached)return cached;
+      try{
+        const response=await fetch(request);
+        if(response&&response.ok){
+          const cache=await caches.open(CACHE);
+          await cache.put(request,response.clone());
+        }
+        return response;
+      }catch{
+        return Response.error();
+      }
+    })());
+    return;
+  }
+
   if(url.origin!==self.location.origin)return;
 
   const ticketId=ticketIdFromUrl(url);
