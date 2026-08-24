@@ -1,6 +1,6 @@
-const CACHE = 'italy-2026-app-v31';
+const CACHE = 'italy-2026-app-v32';
 const APP_SHELL = [
-  './','./index.html','./style.css','./app.js','./sept21-itinerary-update.js','./booking-sync.js','./venice-food-guide-update.js','./florence-food-guide-update.js','./rome-food-guide-update.js','./naples-capri-food-guide-update.js','./navigation-state.js','./history-aware-back.js','./today-polish.js','./wallet-polish.js','./wallet-reliability.js','./wallet-backup.js','./ticket-open.js','./today-ticket-actions.js','./calendar-icon-polish.js','./guide-collapse-default.js','./nearby-guide-focus.js','./trip-ticket-actions.js','./app-status.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'
+  './','./index.html','./style.css','./app.js','./navigation-state.js','./history-aware-back.js','./today-polish.js','./wallet-polish.js','./wallet-reliability.js','./wallet-backup.js','./ticket-open.js','./today-ticket-actions.js','./calendar-icon-polish.js','./guide-collapse-default.js','./nearby-guide-focus.js','./trip-ticket-actions.js','./app-status.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'
 ];
 const PDFJS_ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
