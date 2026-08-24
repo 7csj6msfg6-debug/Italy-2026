@@ -22,16 +22,6 @@
     document.head.appendChild(style);
   }
 
-  function parseTime(date,time){
-    const m=String(time||"").trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-    if(!m)return null;
-    let h=Number(m[1]);
-    const min=Number(m[2]),ap=m[3].toUpperCase();
-    if(ap==="PM"&&h!==12)h+=12;
-    if(ap==="AM"&&h===12)h=0;
-    return new Date(`${date}T${String(h).padStart(2,"0")}:${String(min).padStart(2,"0")}:00`);
-  }
-
   function relativeTiming(target){
     if(!target)return "";
     const minutes=Math.round((target-new Date())/60000);
@@ -45,23 +35,20 @@
 
   function selectedDate(){return document.querySelector("#todayDaySelect")?.value||"";}
   function timelineRows(){return [...document.querySelectorAll("#home .today-event")];}
-  function rowTime(row,date){return parseTime(date,row.querySelector(".today-event-meta strong")?.textContent?.trim());}
-  function unfinishedRows(){return timelineRows().filter(row=>!row.classList.contains("done"));}
+  function rowHasClock(row){return /\d{1,2}(?::\d{2})?\s*(?:AM|PM)/i.test(row.querySelector(".today-event-meta strong")?.textContent||"");}
 
   function liveSelection(date){
-    const rows=unfinishedRows();
-    if(!rows.length)return {current:null,next:null,mode:"complete"};
-    if(date!==localISO())return {current:rows[0],next:rows[1]||null,mode:"preview"};
-
-    const now=new Date();
-    const started=rows.filter(row=>{const dt=rowTime(row,date);return dt&&dt<=now});
-    if(started.length){
-      const current=started[started.length-1];
-      const currentIndex=rows.indexOf(current);
-      const next=rows.slice(currentIndex+1).find(row=>{const dt=rowTime(row,date);return !dt||dt>now})||rows[currentIndex+1]||null;
-      return {current,next,mode:"current"};
-    }
-    return {current:rows[0],next:rows[1]||null,mode:"upcoming"};
+    const day=(window.TRIP_DATA||[]).find(item=>item.date===date);
+    const selection=typeof window.todayEventSelection==="function"?window.todayEventSelection(day):null;
+    const rows=timelineRows();
+    if(!selection)return {current:null,next:null,mode:"complete",currentDt:null,nextDt:null};
+    return {
+      current:selection.current?rows[selection.current.index]||null:null,
+      next:selection.next?rows[selection.next.index]||null:null,
+      mode:selection.mode,
+      currentDt:selection.current?.dt||null,
+      nextDt:selection.next?.dt||null
+    };
   }
 
   function eventIndexForRow(row){
@@ -69,7 +56,7 @@
     return rows.indexOf(row);
   }
 
-  function updateMainCard(row,date,mode){
+  function updateMainCard(row,date,mode,dt){
     const card=document.querySelector("#home .today-next-card");
     if(!card||!row)return;
     const index=eventIndexForRow(row);
@@ -93,7 +80,7 @@
 
     card.querySelectorAll(".today-live-status").forEach(node=>node.remove());
     if(date===localISO()){
-      const timing=relativeTiming(rowTime(row,date));
+      const timing=rowHasClock(row)?relativeTiming(dt):"";
       if(timing&&timeNode){
         const status=document.createElement("div");
         status.className="today-live-status";
@@ -156,7 +143,7 @@
     }
   }
 
-  function renderUpNext(row,date){
+  function renderUpNext(row,date,dt){
     document.querySelector("#home .today-up-next-card")?.remove();
     if(!row)return;
     const main=document.querySelector("#home .today-next-card");
@@ -164,7 +151,7 @@
     const time=row.querySelector(".today-event-meta strong")?.textContent?.trim()||"";
     const title=row.querySelector(".today-event-title")?.textContent?.trim()||"";
     const map=row.querySelector(".today-event-actions a")?.getAttribute("href")||"";
-    const timing=date===localISO()?relativeTiming(rowTime(row,date)):"Later that day";
+    const timing=date===localISO()&&rowHasClock(row)?relativeTiming(dt):date===localISO()?"":"Later that day";
     const section=document.createElement("section");
     section.className="today-up-next-card";
     section.innerHTML=`
@@ -187,8 +174,8 @@
     if(!date)return;
     const selection=liveSelection(date);
     if(!selection.current)return;
-    updateMainCard(selection.current,date,selection.mode);
-    renderUpNext(selection.next,date);
+    updateMainCard(selection.current,date,selection.mode,selection.currentDt);
+    renderUpNext(selection.next,date,selection.nextDt);
 
     timelineRows().forEach(row=>row.classList.remove("active"));
     selection.current.classList.add("active");
