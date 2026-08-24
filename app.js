@@ -235,7 +235,7 @@ function renderRouteMode(){
     </div>
     ${current?`
       <section class="route-current">
-        <div class="focus-label">CURRENT STOP · ${currentIndex+1} OF ${day.events.length}</div>
+        <div class="focus-label">${day.date===todayISO()?"CURRENT STOP":"NEXT STOP"} · ${currentIndex+1} OF ${day.events.length}</div>
         <div class="route-current-title">${current.title}</div>
         <div class="route-current-time">${current.time}</div>
         <div class="route-current-note">${current.note}</div>
@@ -251,7 +251,7 @@ function renderRouteMode(){
       <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
       <div class="small">${complete} of ${day.events.length} stops completed</div>
     </div>
-    <h3>Today’s route</h3>
+    <h3>${day.date===todayISO()?"Today’s route":"Day route"}</h3>
     <div class="route-step-list">
       ${day.events.map((event,index)=>{
         const done=isDone(eventId(day,event,index));
@@ -496,42 +496,43 @@ function walletComparableText(value){
     .replace(/[^a-z0-9]+/g," ")
     .trim();
 }
-function walletEventAlias(title){
-  const text=walletComparableText(title);
-  if(/wine tour check in|wine tasting/.test(text))return "tuscany wine tasting experience";
-  if(/boat tour check in|boat tour/.test(text))return "capri boat tour";
-  if(/snav|ferry to capri|return ferry|return to naples/.test(text))return "snav naples capri round trip";
-  if(/pompeii|vesuvius/.test(text))return "pompeii mount vesuvius";
-  if(/vatican museum/.test(text))return "vatican museums";
-  if(/st peter/.test(text))return "st peter basilica dome lift";
-  if(/st mark|doge/.test(text))return "st marks basilica doges palace";
-  if(/colosseum|roman forum|palatine/.test(text))return "colosseum forum palatine";
-  if(/pisa/.test(text)&&/train/.test(text))return "florence pisa";
-  return text;
-}
-function walletDateLabel(isoDate){
-  const d=new Date(`${isoDate}T12:00:00`);
-  return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric"}).format(d);
+function walletReservationTitle(day,event){
+  const title=walletComparableText(event?.title);
+  const date=day?.date||"";
+  if(/american airlines 1602|aa 1602/.test(title))return "AA 1602 — FLL to Philadelphia";
+  if(/american airlines 714|aa 714/.test(title))return "AA 714 — Philadelphia to Venice";
+  if(/british airways 6647|ba 6647/.test(title))return "BA 6647 — Naples to London";
+  if(/american airlines 39|aa 39/.test(title))return "AA 39 — London to Miami";
+  if(/frecciarossa 9411/.test(title))return "Frecciarossa 9411 — Venice to Florence";
+  if(/italo 8953/.test(title))return "Italo 8953 — Florence to Rome";
+  if(/italo 9967/.test(title))return "Italo 9967 — Rome to Naples";
+  if(date==="2026-09-19"&&/^(train from florence to pisa|return train to florence)$/.test(title))return "Florence ↔ Pisa";
+  if(date==="2026-09-16"&&/st mark s basilica.*doge s palace/.test(title))return "St. Mark’s Basilica & Doge’s Palace";
+  if(date==="2026-09-18"&&/^accademia$/.test(title))return "Galleria dell’Accademia";
+  if(date==="2026-09-18"&&/^brunelleschi dome$/.test(title))return "Brunelleschi’s Dome";
+  if(date==="2026-09-18"&&/uffizi gallery/.test(title))return "Uffizi Gallery";
+  if(date==="2026-09-21"&&/(walk to the colosseum|required colosseum arrival|colosseum full experience|roman forum palatine hill)/.test(title))return "Colosseum / Forum / Palatine";
+  if(date==="2026-09-22"&&/vatican museums/.test(title))return "Vatican Museums";
+  if(date==="2026-09-22"&&/st peter (basilica|square)/.test(title))return "St. Peter’s Basilica + Dome Lift";
+  if(date==="2026-09-19"&&/(wine tour check in|wine tasting experience)/.test(title))return "Tuscany Wine Tasting Experience";
+  if(date==="2026-09-20"&&/complimentary proseccos at angie s/.test(title))return "Big Bus Rome Panoramic Night Tour";
+  if(date==="2026-09-21"&&/(big bus stop|big bus rome panoramic night tour)/.test(title))return "Big Bus Rome Panoramic Night Tour";
+  if(date==="2026-09-25"&&/^(snav ferry check in|ferry to capri|return ferry check in|return to naples)$/.test(title))return "SNAV Naples ⇄ Capri Round Trip";
+  if(date==="2026-09-25"&&/^(boat tour check in|boat tour)$/.test(title))return "Capri Small-Group Boat Tour";
+  if(date==="2026-09-26"&&/(pompeii archaeological site|mount vesuvius crater hike)/.test(title))return "Pompeii & Mount Vesuvius";
+  return "";
 }
 function findWalletMatchForEvent(day,event){
-  const alias=walletEventAlias(event.title);
-  const eventTokens=new Set(alias.split(" ").filter(word=>word.length>1));
-  const targetDate=walletDateLabel(day.date).toLowerCase();
-  let best=null;
-  wallet.forEach(group=>group.items.forEach(item=>{
-    const itemText=walletComparableText(item.title);
-    const itemTokens=new Set(itemText.split(" ").filter(word=>word.length>1));
-    let overlap=0;
-    eventTokens.forEach(token=>{if(itemTokens.has(token))overlap++});
-    const exactAlias=itemText===walletComparableText(alias);
-    const dateMatch=(item.date||"").toLowerCase()===targetDate;
-    const timeMatch=event.time&&item.time&&walletComparableText(item.time).includes(walletComparableText(event.time));
-    let score=overlap*4+(dateMatch?12:0)+(timeMatch?4:0)+(exactAlias?20:0);
-    if(alias.includes(itemText)||itemText.includes(alias))score+=10;
-    if(!best||score>best.score)best={score,key:walletItemKey(group.group,item),item};
-  }));
-  return best&&best.score>=14?best:null;
+  const reservationTitle=walletReservationTitle(day,event);
+  if(!reservationTitle)return null;
+  const target=walletComparableText(reservationTitle);
+  for(const group of wallet){
+    const item=group.items.find(candidate=>walletComparableText(candidate.title)===target);
+    if(item)return {score:100,key:walletItemKey(group.group,item),item};
+  }
+  return null;
 }
+
 function focusWalletCard(key){
   if(!key)return false;
   const card=document.querySelector(`[data-wallet-key="${CSS.escape(key)}"]`);
@@ -629,7 +630,7 @@ function renderHome(selectedDate){
       ${hotel?`<a class="today-tool" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel[1]+" "+hotel[0])}" target="_blank" rel="noopener"><span>⌖</span><div><strong>Hotel Maps</strong><small>${hotel[1]}</small></div></a>`:""}
     </div>
 
-    <div class="section-title today-schedule-title"><h2>Today’s schedule</h2><span class="small">${completed} completed</span></div>
+    <div class="section-title today-schedule-title"><h2>${isActual?"Today’s schedule":"Day schedule"}</h2><span class="small">${completed} completed</span></div>
     <div class="today-timeline">
       ${day.events.map((event,index)=>{
         const key=eventId(day,event,index),done=isDone(key),active=index===nextIndex;
@@ -667,6 +668,7 @@ function renderHome(selectedDate){
     renderHome(day.date);
     renderTrip();
   }));
+  document.dispatchEvent(new CustomEvent("italy:home-rendered",{detail:{date:day.date}}));
 }
 
 function renderTrip(){
@@ -681,6 +683,7 @@ function renderTrip(){
     qsa("#tripCards .day-card").forEach(card=>card.classList.toggle("hidden",btn.dataset.cityFilter!=="All"&&card.dataset.city!==btn.dataset.cityFilter));
   }));
   bindDayCards();
+  document.dispatchEvent(new CustomEvent("italy:trip-rendered"));
 }
 function walletItemKey(groupName,item){
   return `${groupName}|${item.title}|${item.date}|${item.time}`.toLowerCase().replace(/[^a-z0-9|]+/g,"-");
@@ -694,6 +697,7 @@ function walletProviderUrl(groupName,item){
   if(title.includes("frecciarossa")||title.includes("trenitalia")) return "https://www.trenitalia.com/";
   if(title.includes("italo")) return "https://www.italotreno.com/";
   if(title.includes("snav")) return "https://www.snav.it/";
+  if(title.includes("big bus")) return "https://www.bigbustours.com/en/rome";
   return "";
 }
 function walletShareText(groupName,item){
@@ -722,7 +726,7 @@ async function renderWallet(){
   imported.filter(item=>item.linkedWalletKey).forEach(item=>(linkedByKey[item.linkedWalletKey]||=[]).push(item));
   const categories=["All","Flight","Train","Hotel","Attraction","Ferry","Tour","Other"];
   const icons={Flight:"✈️",Train:"🚆",Hotel:"🏨",Attraction:"🎟️",Ferry:"🚤",Tour:"🍷",Other:"📄"};
-  const groupCategory={Flights:"Flight",Trains:"Train",Hotels:"Hotel",Attractions:"Attraction",Ferries:"Ferry",Tours:"Tour"};
+  const groupCategory={Flights:"Flight",Hotels:"Hotel",Trains:"Train",Attractions:"Attraction",Ferries:"Ferry",Tours:"Tour"};
 
   qs("#wallet").innerHTML=`
     <div class="wallet-hero">
@@ -901,6 +905,7 @@ async function renderWallet(){
     await renderWallet();
   }));
   if(pendingWalletTarget)requestAnimationFrame(()=>focusWalletCard(pendingWalletTarget));
+  document.dispatchEvent(new CustomEvent("italy:wallet-rendered"));
 }
 function escapeHTML(value){return String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));}
 function formatFileSize(bytes){if(bytes<1024)return `${bytes} B`;if(bytes<1024*1024)return `${(bytes/1024).toFixed(1)} KB`;return `${(bytes/1024/1024).toFixed(1)} MB`;}
@@ -1488,7 +1493,7 @@ async function renderBookings(){
   };
 
   const groupCategory={Flights:"Transportation",Trains:"Transportation",Ferries:"Transportation",Attractions:"Attractions & tours",Tours:"Attractions & tours"};
-  const allReservations=wallet.flatMap(group=>group.items.map(item=>{
+  const allReservations=wallet.filter(group=>group.group!=="Hotels").flatMap(group=>group.items.map(item=>{
     const files=linked[walletItemKey(group.group,item)]||[];
     const isToBook=item.status==="To book";
     const isPending=item.status==="Ticket needed";
@@ -1513,7 +1518,7 @@ async function renderBookings(){
 
   const attention=[
     ...allReservations.filter(x=>x.state==="to-book"),
-    ...remaining.filter(r=>!allReservations.some(x=>x.title.toLowerCase().includes(r[0].split(" / ")[0].toLowerCase()))).map(r=>({
+    ...remaining.filter(r=>!allReservations.some(x=>{const reservation=walletComparableText(x.title),task=walletComparableText(r[0]);return reservation.includes(task)||task.includes(reservation)||(reservation.includes("pisa")&&task.includes("pisa"))})).map(r=>({
       title:r[0],date:"",time:"",note:r[1],state:"to-book",icon:"○",group:"Other",files:[]
     }))
   ];
@@ -1710,9 +1715,9 @@ function renderCurrency(){
     const fee=Number(feeSelect.value)||0;
     const isEUR=direction==="EURUSD";
     let result=isEUR?amount*rate:amount/rate;
-    if(fee>0)result*=1+fee/100;
+    if(fee>0)result=isEUR?result*(1+fee/100):(amount/(1+fee/100))/rate;
     qs("#currencyResult").textContent=`${isEUR?"$":"€"}${result.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
-    qs("#currencyFeeNote").textContent=fee?`Includes ${fee}% card fee`:"No card fee added";
+    qs("#currencyFeeNote").textContent=fee?(isEUR?`Includes ${fee}% card fee`:`${fee}% fee deducted from USD budget`):"No card fee added";
     qs("#fromCode").textContent=isEUR?"EUR":"USD";
     qs("#toCode").textContent=isEUR?"USD":"EUR";
     qs("#fromFlag").textContent=isEUR?"🇪🇺":"🇺🇸";
@@ -1827,6 +1832,7 @@ function renderMore(){
       <div class="small">Once refreshed after an update, the app keeps working without a connection.</div>
     </div>`;
   bindInternalNavigation();
+  document.dispatchEvent(new CustomEvent("italy:more-rendered"));
 }
 
 function showView(target,updateTab=true){
@@ -1837,10 +1843,18 @@ function showView(target,updateTab=true){
   }
   window.scrollTo({top:0,behavior:"smooth"});
 }
+let internalNavigationBound=false;
 function bindInternalNavigation(){
-  qsa("[data-jump]").forEach(btn=>btn.addEventListener("click",()=>showView(btn.dataset.jump)));
-  qsa("[data-open]").forEach(btn=>btn.addEventListener("click",()=>showView(btn.dataset.open,false)));
-  qsa("[data-back]").forEach(btn=>btn.addEventListener("click",()=>showView(btn.dataset.back)));
+  if(internalNavigationBound)return;
+  internalNavigationBound=true;
+  document.addEventListener("click",event=>{
+    const jump=event.target.closest("[data-jump]");
+    if(jump){showView(jump.dataset.jump);return}
+    const open=event.target.closest("[data-open]");
+    if(open){showView(open.dataset.open,false);return}
+    const back=event.target.closest("[data-back]");
+    if(back)showView(back.dataset.back);
+  });
 }
 qsa(".tab").forEach(btn=>btn.addEventListener("click",()=>showView(btn.dataset.target)));
 
