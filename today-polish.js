@@ -1,6 +1,5 @@
 (() => {
-  const originalRenderHome = window.renderHome;
-  if (typeof originalRenderHome !== "function") return;
+  if (typeof window.renderHome !== "function") return;
 
   const localISO = (date = new Date()) => [date.getFullYear(),String(date.getMonth()+1).padStart(2,"0"),String(date.getDate()).padStart(2,"0")].join("-");
 
@@ -183,11 +182,7 @@
     if(activeMeta&&date===localISO())activeMeta.textContent=selection.mode==="current"?"Current":"Up next";
   }
 
-  window.renderHome=function(selected){
-    const result=originalRenderHome(selected);
-    requestAnimationFrame(decorateToday);
-    return result;
-  };
+  document.addEventListener("italy:home-rendered",()=>requestAnimationFrame(decorateToday));
 
   document.addEventListener("visibilitychange",()=>{
     if(document.visibilityState==="visible")requestAnimationFrame(decorateToday);
