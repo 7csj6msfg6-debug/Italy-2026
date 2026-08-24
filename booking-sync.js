@@ -25,7 +25,7 @@
   if (walletItem) {
     walletItem.time = '1:00 PM';
     walletItem.status = 'Ready';
-    walletItem.details = 'FULL EXPERIENCE – SOTTERRANEI E ARENA · 2 tickets · Colosseum levels 1 & 2 + Underground + Arena · Roman Forum + Palatine Hill + exhibitions/museums + SUPER sites · Valid 2 consecutive days · Reservation GPCOZXWZD833PZ7E';
+    walletItem.details = 'FULL EXPERIENCE – SOTTERRANEI E ARENA · 2 tickets · Colosseum levels 1 & 2 + Underground + Arena · Roman Forum + Palatine Hill + exhibitions/museums + SUPER sites · Valid 2 consecutive days · ';
     walletItem.map = 'https://www.google.com/maps/search/?api=1&query=Colosseum+Rome';
     walletItem.mapLabel = 'Entrance';
     delete walletItem.note;
