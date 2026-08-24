@@ -9,22 +9,22 @@ window.TICKET_WALLET = [
   {title:"BA 6647 — Naples to London",date:"Sep 27",time:"7:40 AM",status:"Ticket needed",note:"Boarding pass becomes available closer to departure."},
   {title:"AA 39 — London to Miami",date:"Sep 27",time:"12:15 PM",status:"Ticket needed",note:"Boarding pass becomes available closer to departure."}]},
  {group:"Trains", icon:"🚆", items:[
-  {title:"Frecciarossa 9411 — Venice to Florence",date:"Sep 17",time:"9:26 AM",status:"Ready",details:"PNR TB2MB5 · Coach 7 · Seats 3D & 4D"},
-  {title:"Italo 8953 — Florence to Rome",date:"Sep 20",time:"10:03 AM",status:"Ready",details:"Ticket code NJYG5X · Coach 6 · Seats 1 & 2 · Arrives 11:40 AM"},
-  {title:"Italo 9967 — Rome to Naples",date:"Sep 24",time:"9:41 AM",status:"Ready",details:"Ticket code BL65HR · Coach 7 · Seats 1 & 2"},
+  {title:"Frecciarossa 9411 — Venice to Florence",date:"Sep 17",time:"9:26 AM",status:"Ready",details:"Coach 7 · Seats 3D & 4D"},
+  {title:"Italo 8953 — Florence to Rome",date:"Sep 20",time:"10:03 AM",status:"Ready",details:"Coach 6 · Seats 1 & 2 · Arrives 11:40 AM"},
+  {title:"Italo 9967 — Rome to Naples",date:"Sep 24",time:"9:41 AM",status:"Ready",details:"Coach 7 · Seats 1 & 2"},
   {title:"Florence ↔ Pisa",date:"Sep 19",time:"Early morning",status:"To book",note:"Train has not been booked yet."}]},
  {group:"Attractions", icon:"🎟️", items:[
-  {title:"St. Mark’s Basilica & Doge’s Palace",date:"Sep 16",time:"10:00 AM",status:"Ready",details:"2 adults · Booking 1414055849 · Meet just past Caffè Florian · Look for purple-shirt staff",map:"https://www.google.com/maps/search/?api=1&query=Caff%C3%A8+Florian%2C+Piazza+San+Marco+57%2C+30124+Venezia+VE%2C+Italy",mapLabel:"Meeting point"},
-  {title:"Galleria dell’Accademia",date:"Sep 18",time:"8:30 AM",status:"Ready",details:"2 adult tickets · Order 23446732",map:"https://www.google.com/maps/search/?api=1&query=Galleria+dell%27Accademia+Florence"},
+  {title:"St. Mark’s Basilica & Doge’s Palace",date:"Sep 16",time:"10:00 AM",status:"Ready",details:"2 adults · Meet just past Caffè Florian · Look for purple-shirt staff",map:"https://www.google.com/maps/search/?api=1&query=Caff%C3%A8+Florian%2C+Piazza+San+Marco+57%2C+30124+Venezia+VE%2C+Italy",mapLabel:"Meeting point"},
+  {title:"Galleria dell’Accademia",date:"Sep 18",time:"8:30 AM",status:"Ready",details:"2 adult tickets",map:"https://www.google.com/maps/search/?api=1&query=Galleria+dell%27Accademia+Florence"},
   {title:"Brunelleschi’s Dome",date:"Sep 18",time:"10:30 AM",status:"Ready",details:"Brunelleschi Pass · 463 steps · Porta della Mandorla",map:"https://www.google.com/maps/search/?api=1&query=Brunelleschi%27s+Dome+Florence"},
-  {title:"Uffizi Gallery",date:"Sep 18",time:"2:45 PM",status:"Ready",details:"2 adult tickets · PNR 1FS9K1TF",map:"https://www.google.com/maps/search/?api=1&query=Uffizi+Gallery+Florence"},
+  {title:"Uffizi Gallery",date:"Sep 18",time:"2:45 PM",status:"Ready",details:"2 adult tickets",map:"https://www.google.com/maps/search/?api=1&query=Uffizi+Gallery+Florence"},
   {title:"Colosseum / Forum / Palatine",date:"Sep 21",time:"TBD",status:"To book",note:"Reservation has not been booked yet."},
-  {title:"Vatican Museums",date:"Sep 22",time:"9:00 AM",status:"Ready",details:"Guided tour in English · 2 adults · Arrive by 8:30 AM · Passageway 2 · Code 2L2N0MV03TTG95HOY",map:"https://www.google.com/maps/search/?api=1&query=Vatican+Museums+Entrance",mapLabel:"Entrance"},
+  {title:"Vatican Museums",date:"Sep 22",time:"9:00 AM",status:"Ready",details:"Guided tour in English · 2 adults · Arrive by 8:30 AM · Passageway 2",map:"https://www.google.com/maps/search/?api=1&query=Vatican+Museums+Entrance",mapLabel:"Entrance"},
   {title:"St. Peter’s Basilica + Dome Lift",date:"Sep 22",time:"1:30 PM",status:"Ready",details:"Dome 1:30 PM · Basilica 2:30 PM · VIOLET Lambertini entrance · 2 adults",map:"https://www.google.com/maps/search/?api=1&query=St+Peter%27s+Basilica"}]},
  {group:"Ferries", icon:"🚤", items:[
-  {title:"SNAV Naples ⇄ Capri Round Trip",date:"Sep 25",time:"8:05 AM outbound · 6:10 PM return",status:"Ready",details:"Outbound check-in 7:35 AM · Return check-in 5:40 PM · Booking PWIP2608020174"}]},
+  {title:"SNAV Naples ⇄ Capri Round Trip",date:"Sep 25",time:"8:05 AM outbound · 6:10 PM return",status:"Ready",details:"Outbound check-in 7:35 AM · Return check-in 5:40 PM"}]},
  {group:"Tours", icon:"🍷", items:[
-  {title:"Tuscany Wine Tasting Experience",date:"Sep 19",time:"2:30 PM",status:"Ready",details:"Check-in 2:15 PM · Prestige Rent · Booking 1379678993",map:"https://www.google.com/maps/search/?api=1&query=Piazzale+Montelungo+Florence",mapLabel:"Meeting point"},
+  {title:"Tuscany Wine Tasting Experience",date:"Sep 19",time:"2:30 PM",status:"Ready",details:"Check-in 2:15 PM · Prestige Rent",map:"https://www.google.com/maps/search/?api=1&query=Piazzale+Montelungo+Florence",mapLabel:"Meeting point"},
   {title:"Capri Small-Group Boat Tour",date:"Sep 25",time:"2:00 PM",status:"Ticket needed",note:"Booked, but no voucher has been added yet."},
   {title:"Pompeii & Mount Vesuvius",date:"Sep 26",time:"8:00 AM",status:"Ready",details:"2 adult vouchers · Worldtours · Reference WOR-T140093602"}]}
 ];
