@@ -3,9 +3,6 @@
 
   let scheduled = false;
   let runToken = 0;
-  const originalRenderHome = window.renderHome;
-  const originalRenderWallet = window.renderWallet;
-
   function ensureStyles() {
     if (document.getElementById("wallet-polish-styles")) return;
     const style = document.createElement("style");
@@ -109,31 +106,6 @@
     if (note.textContent !== label) note.textContent = label;
   }
 
-  async function openDirectTicket(id) {
-    const popup = window.open("", "_blank");
-    try {
-      if (typeof window.getImportedTicket !== "function") throw new Error("Ticket reader unavailable");
-      const ticket = await window.getImportedTicket(id);
-      if (!ticket?.blob) throw new Error("Ticket not found");
-      const url = URL.createObjectURL(ticket.blob);
-      if (popup) popup.location = url;
-      else window.location.href = url;
-      setTimeout(() => URL.revokeObjectURL(url), 120000);
-    } catch (error) {
-      if (popup) popup.close();
-      alert("This ticket could not be opened.");
-    }
-  }
-  window.openImportedTicket = openDirectTicket;
-
-  document.addEventListener("click", event => {
-    const button = event.target.closest("#home [data-home-wallet][data-direct-ticket-id]");
-    if (!button) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    openDirectTicket(button.dataset.directTicketId);
-  }, true);
-
   async function run() {
     scheduled = false;
     const token = ++runToken;
@@ -150,21 +122,8 @@
     requestAnimationFrame(run);
   }
 
-  if (typeof originalRenderHome === "function") {
-    window.renderHome = function(...args) {
-      const result = originalRenderHome.apply(this, args);
-      schedule();
-      return result;
-    };
-  }
-
-  if (typeof originalRenderWallet === "function") {
-    window.renderWallet = async function(...args) {
-      const result = await originalRenderWallet.apply(this, args);
-      schedule();
-      return result;
-    };
-  }
+  document.addEventListener("italy:home-rendered",schedule);
+  document.addEventListener("italy:wallet-rendered",schedule);
 
   document.addEventListener("click", event => {
     if (event.target.closest('[data-target="home"], [data-target="wallet"], [data-jump="wallet"]')) {
