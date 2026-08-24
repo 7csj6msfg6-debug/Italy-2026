@@ -16,20 +16,62 @@
     }
   }
 
-  function openImportedTicket(id) {
-    if (id == null || id === '') return;
+  async function routeReady(target) {
+    try {
+      const response = await fetch(target, {
+        cache: 'no-store',
+        headers: { Range: 'bytes=0-0' }
+      });
+      return response.status === 206 && response.headers.get('accept-ranges') === 'bytes';
+    } catch {
+      return false;
+    }
+  }
 
-    // A normal same-origin URL lets Samsung Internet handle PDFs as inline
-    // documents instead of treating every fresh blob: URL as a new download.
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      const target = routeFor(id);
-      const popup = window.open(target, '_blank');
-      if (!popup) window.location.href = target;
-      return;
+  function waitForControllerChange(timeout = 1400) {
+    if (!('serviceWorker' in navigator)) return Promise.resolve();
+    return new Promise(resolve => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        navigator.serviceWorker.removeEventListener('controllerchange', finish);
+        resolve();
+      };
+      navigator.serviceWorker.addEventListener('controllerchange', finish, { once: true });
+      setTimeout(finish, timeout);
+    });
+  }
+
+  async function openImportedTicket(id) {
+    if (id == null || id === '') return;
+    const popup = window.open('', '_blank');
+    const target = routeFor(id);
+
+    // Samsung Internet is much more reliable with a normal same-origin PDF URL
+    // than with a freshly-created blob: URL. Probe the service-worker route first
+    // so a just-deployed app cannot accidentally open the old app shell at it.
+    if ('serviceWorker' in navigator) {
+      try {
+        let ready = await routeReady(target);
+        if (!ready) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            const changed = waitForControllerChange();
+            await registration.update();
+            await changed;
+            ready = await routeReady(target);
+          }
+        }
+        if (ready) {
+          if (popup) popup.location = target;
+          else window.location.href = target;
+          return;
+        }
+      } catch {}
     }
 
-    // First-load fallback before the service worker controls this page.
-    const popup = window.open('', '_blank');
+    // First-load / unsupported-browser fallback keeps the current behavior.
     fallbackBlobOpen(id, popup);
   }
 
