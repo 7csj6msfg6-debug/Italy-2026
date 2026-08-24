@@ -1,6 +1,5 @@
 (() => {
-  const originalRenderWallet = window.renderWallet;
-  if (typeof originalRenderWallet !== "function" || typeof window.getImportedTickets !== "function") return;
+  if (typeof window.renderWallet !== "function" || typeof window.getImportedTickets !== "function") return;
 
   let decorating = false;
 
@@ -112,11 +111,7 @@
     }
   }
 
-  window.renderWallet = async function(...args) {
-    const result = await originalRenderWallet.apply(this, args);
-    await decorateWalletReliability();
-    return result;
-  };
+  document.addEventListener("italy:wallet-rendered",()=>requestAnimationFrame(decorateWalletReliability));
 
   const wallet = document.getElementById("wallet");
   if (wallet) {
