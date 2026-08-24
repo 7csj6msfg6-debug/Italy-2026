@@ -65,25 +65,88 @@ function eventId(day,event,index){
 }
 function isDone(key){try{return localStorage.getItem(P+"done-"+key)==="1"}catch{return false}}
 function setDone(key,value){try{localStorage.setItem(P+"done-"+key,value?"1":"0")}catch{}}
+function clockMinutes(time){
+  const value=String(time||"").trim();
+  const range=value.match(/^~?(\d{1,2})(?::(\d{2}))?\s*[–-].*?\b(AM|PM)\b/i);
+  const clock=range||value.match(/~?(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+  if(clock){
+    let hour=Number(clock[1]);
+    const minute=Number(clock[2]||0);
+    const period=clock[3].toUpperCase();
+    if(period==="PM"&&hour!==12)hour+=12;
+    if(period==="AM"&&hour===12)hour=0;
+    return hour*60+minute;
+  }
+  const label=value.toLowerCase().replace(/\s+/g," ");
+  const approximate={
+    "early morning":7*60,
+    "morning":9*60,
+    "late morning":11*60,
+    "midday":12*60,
+    "lunch":12*60+30,
+    "early afternoon":13*60+30,
+    "afternoon":15*60,
+    "late afternoon":17*60,
+    "late afternoon / early evening":17*60+30,
+    "sunset":18*60+30,
+    "evening":19*60+30
+  };
+  return approximate[label]??null;
+}
 function parseDateTime(date,time){
-  const m=time.match(/^(\d{1,2}):(\d{2})\s(AM|PM)$/i);
-  if(!m)return null;
-  let h=Number(m[1]); const min=Number(m[2]); const ap=m[3].toUpperCase();
-  if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;
-  return new Date(`${date}T${String(h).padStart(2,"0")}:${String(min).padStart(2,"0")}:00`);
+  const minutes=clockMinutes(time);
+  if(minutes===null)return null;
+  const hour=Math.floor(minutes/60);
+  const minute=minutes%60;
+  return new Date(`${date}T${String(hour).padStart(2,"0")}:${String(minute).padStart(2,"0")}:00`);
+}
+function eventTimeline(day){
+  if(!day)return [];
+  const hour=3600000;
+  const points=day.events.map(event=>parseDateTime(day.date,event.time)?.getTime()??null);
+  for(let index=0;index<points.length;){
+    if(points[index]!==null){index++;continue}
+    const start=index;
+    while(index<points.length&&points[index]===null)index++;
+    const count=index-start;
+    const previous=start>0?points[start-1]:null;
+    const next=index<points.length?points[index]:null;
+    if(previous!==null&&next!==null&&next>previous){
+      const step=(next-previous)/(count+1);
+      for(let offset=0;offset<count;offset++)points[start+offset]=previous+step*(offset+1);
+    }else if(previous!==null){
+      for(let offset=0;offset<count;offset++)points[start+offset]=previous+hour*(offset+1);
+    }else if(next!==null){
+      for(let offset=0;offset<count;offset++)points[start+offset]=next-hour*(count-offset);
+    }else{
+      const base=new Date(`${day.date}T09:00:00`).getTime();
+      for(let offset=0;offset<count;offset++)points[start+offset]=base+hour*1.5*offset;
+    }
+  }
+  const minimumGap=15*60000;
+  for(let index=1;index<points.length;index++){
+    if(points[index]<=points[index-1])points[index]=points[index-1]+minimumGap;
+  }
+  return day.events.map((event,index)=>({event,index,dt:new Date(points[index])}));
 }
 function tripStats(){
   let total=0,done=0;
   trip.forEach(d=>d.events.forEach((e,i)=>{total++;if(isDone(eventId(d,e,i)))done++}));
   return {total,done,pct:total?Math.round(done/total*100):0};
 }
+function todayEventSelection(day,now=new Date()){
+  if(!day)return {current:null,next:null,mode:"complete"};
+  const items=eventTimeline(day).filter(item=>!isDone(eventId(day,item.event,item.index)));
+  if(!items.length)return {current:null,next:null,mode:"complete"};
+  if(day.date!==todayISO(now))return {current:items[0],next:items[1]||null,mode:"preview"};
+  const started=items.filter(item=>item.dt<=now);
+  if(!started.length)return {current:items[0],next:items[1]||null,mode:"upcoming"};
+  const current=started[started.length-1];
+  const position=items.indexOf(current);
+  return {current,next:items[position+1]||null,mode:"current"};
+}
 function nextEventForDay(day){
-  if(!day)return null;
-  const now=new Date();
-  const items=day.events.map((event,index)=>({event,index,dt:parseDateTime(day.date,event.time)}));
-  return items.find(x=>x.dt&&x.dt>=now&&!isDone(eventId(day,x.event,x.index)))
-    || items.find(x=>!isDone(eventId(day,x.event,x.index)))
-    || null;
+  return todayEventSelection(day).current;
 }
 function upcomingBooked(){
   const now=new Date();
@@ -240,14 +303,14 @@ function todayDateLabel(date=new Date()){
   return new Intl.DateTimeFormat("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).format(date);
 }
 function tripCountdown(){
-  const start=new Date(2026,8,15);
+  const start=new Date(2026,8,14);
   const end=new Date(2026,8,27);
   const now=new Date();
   const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   const dayMs=86400000;
   if(today<start){
     const days=Math.ceil((start-today)/dayMs);
-    return {value:days,label:days===1?"day until Italy":"days until Italy",message:"Departure · September 15, 2026"};
+    return {value:days,label:days===1?"day until departure":"days until departure",message:"Departure · September 14, 2026"};
   }
   if(today<=end){
     const tripDay=Math.floor((today-start)/dayMs)+1;
@@ -341,9 +404,17 @@ function weatherCardHTML(state){
     <div class="today-weather-foot">${state.offline?"Saved forecast":"Updated"} · ${weatherUpdatedLabel(state.updatedAt)}</div>
   </section>`;
 }
+let todayWeatherRequest=0;
+let todayWeatherController=null;
 async function renderTodayWeather(day,force=false){
+  const requestId=++todayWeatherRequest;
+  if(todayWeatherController)todayWeatherController.abort();
+  todayWeatherController=null;
   const host=qs("#todayWeather");
   if(!host)return;
+  const isCurrent=()=>requestId===todayWeatherRequest
+    &&qs("#todayWeather")===host
+    &&qs("#todayDaySelect")?.value===day.date;
   const location=weatherLocationForDay(day);
   if(!location){host.innerHTML="";return}
   const distance=weatherDateDistance(day.date);
@@ -361,6 +432,8 @@ async function renderTodayWeather(day,force=false){
   }else{
     host.innerHTML=weatherCardHTML({mode:"loading",location:location.name});
   }
+  const controller=new AbortController();
+  todayWeatherController=controller;
   try{
     const params=new URLSearchParams({
       latitude:location.latitude,
@@ -372,7 +445,7 @@ async function renderTodayWeather(day,force=false){
       start_date:day.date,
       end_date:day.date
     });
-    const response=await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+    const response=await fetch(`https://api.open-meteo.com/v1/forecast?${params}`,{signal:controller.signal});
     if(!response.ok)throw new Error(`Weather request failed: ${response.status}`);
     const json=await response.json();
     const isToday=day.date===todayISO();
@@ -388,23 +461,24 @@ async function renderTodayWeather(day,force=false){
       updatedAt:Date.now()
     };
     saveWeather(location,day.date,result);
-    if(qs("#todayWeather"))qs("#todayWeather").innerHTML=weatherCardHTML({...result,mode:"ready"});
-    const refresh=qs("#todayWeather [data-weather-refresh]");
+    if(!isCurrent())return;
+    host.innerHTML=weatherCardHTML({...result,mode:"ready"});
+    const refresh=host.querySelector("[data-weather-refresh]");
     if(refresh)refresh.addEventListener("click",()=>renderTodayWeather(day,true));
   }catch(error){
+    if(error?.name==="AbortError"||!isCurrent())return;
     console.error(error);
     if(cached){
       host.innerHTML=weatherCardHTML({...cached,mode:"ready",offline:true});
-      const refresh=host.querySelector("[data-weather-refresh]");
-      if(refresh)refresh.addEventListener("click",()=>renderTodayWeather(day,true));
     }else{
       host.innerHTML=weatherCardHTML({mode:"error",location:location.name});
-      const refresh=host.querySelector("[data-weather-refresh]");
-      if(refresh)refresh.addEventListener("click",()=>renderTodayWeather(day,true));
     }
+    const refresh=host.querySelector("[data-weather-refresh]");
+    if(refresh)refresh.addEventListener("click",()=>renderTodayWeather(day,true));
+  }finally{
+    if(todayWeatherController===controller)todayWeatherController=null;
   }
 }
-
 
 let pendingWalletTarget="";
 function walletComparableText(value){
