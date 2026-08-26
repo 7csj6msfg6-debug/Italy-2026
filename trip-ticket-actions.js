@@ -1,24 +1,23 @@
 (() => {
-  const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-
   function walletMatchForEvent(day, event) {
     if (typeof window.findWalletMatchForEvent === 'function') return window.findWalletMatchForEvent(day, event);
     return null;
   }
 
-  function openWalletItem(title) {
+  function openWalletItem(key) {
     if (typeof window.showView === 'function') window.showView('wallet');
     else document.querySelector('[data-target="wallet"]')?.click();
     setTimeout(() => {
-      const wallet = document.getElementById('wallet');
-      if (!wallet) return;
-      const target = [...wallet.querySelectorAll('[data-wallet-key], .wallet-item, .ticket-item, article, .info-card')]
-        .find(el => normalize(el.textContent).includes(normalize(title)));
+      if (typeof window.cancelNavigationScrollRestore === 'function') window.cancelNavigationScrollRestore();
+      if (typeof window.focusWalletCard === 'function' && window.focusWalletCard(key)) return;
+      const target = document.querySelector(`#wallet [data-wallet-key="${CSS.escape(key)}"]`);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         target.classList.add('trip-ticket-target');
         setTimeout(() => target.classList.remove('trip-ticket-target'), 2200);
-      } else wallet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        document.getElementById('wallet')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }, 80);
   }
 
@@ -51,14 +50,14 @@
           button.textContent = 'Open Ticket';
           button.addEventListener('click', () => {
             if (typeof window.openImportedTicket === 'function') window.openImportedTicket(files[0].id);
-            else openWalletItem(match.item.title);
+            else openWalletItem(match.key);
           });
         } else if (files.length > 1) {
           button.textContent = 'Open Tickets';
-          button.addEventListener('click', () => openWalletItem(match.item.title));
+          button.addEventListener('click', () => openWalletItem(match.key));
         } else {
           button.textContent = 'View in Wallet';
-          button.addEventListener('click', () => openWalletItem(match.item.title));
+          button.addEventListener('click', () => openWalletItem(match.key));
         }
 
         const map = content.querySelector('.map-button');
