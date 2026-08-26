@@ -541,6 +541,7 @@ function focusWalletCard(key){
   if(search&&search.value){search.value="";search.dispatchEvent(new Event("input"))}
   qsa("[data-wallet-filter]").forEach(button=>button.classList.toggle("active",button.dataset.walletFilter==="All"));
   qsa("#walletContent .wallet-group,[data-wallet-item]").forEach(el=>el.classList.remove("hidden"));
+  if(typeof window.cancelNavigationScrollRestore==="function")window.cancelNavigationScrollRestore();
   card.scrollIntoView({behavior:"smooth",block:"center"});
   card.classList.remove("wallet-target-highlight");
   void card.offsetWidth;
@@ -548,6 +549,7 @@ function focusWalletCard(key){
   setTimeout(()=>card.classList.remove("wallet-target-highlight"),2400);
   return true;
 }
+window.focusWalletCard=focusWalletCard;
 async function openWalletForEvent(day,event){
   const match=findWalletMatchForEvent(day,event);
   pendingWalletTarget=match?match.key:"";
