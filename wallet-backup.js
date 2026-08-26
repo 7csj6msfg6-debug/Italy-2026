@@ -563,6 +563,7 @@
       setTimeout(async () => {
         await decorateMore();
         const c = document.getElementById('walletBackupCard');
+        window.cancelNavigationScrollRestore?.();
         c?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         c?.classList.add('wallet-backup-target');
         setTimeout(() => c?.classList.remove('wallet-backup-target'), 2200);
