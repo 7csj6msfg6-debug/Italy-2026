@@ -357,71 +357,14 @@
     }
   }
 
-  async function fallbackBlobOpen(id, popup) {
-    try {
-      if (typeof window.getImportedTicket !== 'function') throw new Error('Ticket reader unavailable');
-      const ticket = await window.getImportedTicket(id);
-      if (!ticket?.blob) throw new Error('Ticket not found');
-      const url = URL.createObjectURL(ticket.blob);
-      if (popup) popup.location = url;
-      else window.location.href = url;
-      setTimeout(() => URL.revokeObjectURL(url), 120000);
-    } catch (error) {
-      if (popup) popup.close();
-      alert('This ticket could not be opened.');
-    }
-  }
-
-  async function routeReady(target) {
-    try {
-      const response = await fetch(target, {
-        cache: 'no-store',
-        headers: { Range: 'bytes=0-0' }
-      });
-      return response.status === 206 && response.headers.get('accept-ranges') === 'bytes';
-    } catch {
-      return false;
-    }
-  }
-
-  function waitForControllerChange(timeout = 1400) {
-    if (!('serviceWorker' in navigator)) return Promise.resolve();
-    return new Promise(resolve => {
-      let done = false;
-      const finish = () => {
-        if (done) return;
-        done = true;
-        navigator.serviceWorker.removeEventListener('controllerchange', finish);
-        resolve();
-      };
-      navigator.serviceWorker.addEventListener('controllerchange', finish, { once: true });
-      setTimeout(finish, timeout);
-    });
-  }
-
-  async function openExternalTicket(id) {
-    const popup = window.open('', '_blank');
+  function openExternalTicket(id) {
     const target = routeFor(id);
-    if ('serviceWorker' in navigator) {
-      try {
-        let ready = await routeReady(target);
-        if (!ready) {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            const changed = waitForControllerChange();
-            await registration.update();
-            await changed;
-            ready = await routeReady(target);
-          }
-        }
-        if (ready) {
-          if (popup) popup.location = target;
-          else window.location.href = target;
-          return;
-        }
-      } catch {}
+    if (navigator.serviceWorker?.controller) {
+      const popup = window.open(target, '_blank');
+      if (!popup) window.location.href = target;
+      return;
     }
-    fallbackBlobOpen(id, popup);
+    openSamsungTicket(id);
   }
 
   function openImportedTicket(id) {
