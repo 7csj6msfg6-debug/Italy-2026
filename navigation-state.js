@@ -109,6 +109,12 @@
     });
   }
 
+  function cancelScrollRestore() {
+    restoreToken++;
+    restoringScroll = false;
+  }
+  window.cancelNavigationScrollRestore = cancelScrollRestore;
+
   function restoreView(view) {
     if (view === "guide") restoreGuideState();
     if (view === "trip") restoreTripState();
