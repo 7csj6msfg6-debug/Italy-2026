@@ -378,7 +378,7 @@ function weatherCardHTML(state){
   if(state.mode==="unavailable"){
     return `<section class="today-weather-card">
       <div class="today-weather-head"><div><span class="focus-label">${state.location.toUpperCase()} WEATHER</span><h2>Forecast available closer to this date</h2></div><span class="today-weather-icon">🌤️</span></div>
-      <p>Daily forecasts become available within about 16 days of ${state.dateLabel}.</p>
+      <p>Daily forecasts become available up to 15 days before ${state.dateLabel}.</p>
     </section>`;
   }
   if(state.mode==="loading"){
@@ -419,7 +419,7 @@ async function renderTodayWeather(day,force=false){
   if(!location){host.innerHTML="";return}
   const distance=weatherDateDistance(day.date);
   const dateLabel=new Intl.DateTimeFormat("en-US",{month:"long",day:"numeric"}).format(new Date(`${day.date}T12:00:00`));
-  if(distance<0||distance>16){
+  if(distance<0||distance>15){
     host.innerHTML=weatherCardHTML({mode:"unavailable",location:location.name,dateLabel});
     return;
   }
@@ -446,7 +446,13 @@ async function renderTodayWeather(day,force=false){
       end_date:day.date
     });
     const response=await fetch(`https://api.open-meteo.com/v1/forecast?${params}`,{signal:controller.signal});
-    if(!response.ok)throw new Error(`Weather request failed: ${response.status}`);
+    if(!response.ok){
+      let reason="";
+      try{reason=(await response.json())?.reason||""}catch{}
+      const error=new Error(reason||`Weather request failed: ${response.status}`);
+      error.weatherOutOfRange=response.status===400&&/out of allowed range/i.test(reason);
+      throw error;
+    }
     const json=await response.json();
     const isToday=day.date===todayISO();
     const result={
@@ -467,6 +473,10 @@ async function renderTodayWeather(day,force=false){
     if(refresh)refresh.addEventListener("click",()=>renderTodayWeather(day,true));
   }catch(error){
     if(error?.name==="AbortError"||!isCurrent())return;
+    if(error?.weatherOutOfRange){
+      host.innerHTML=weatherCardHTML({mode:"unavailable",location:location.name,dateLabel});
+      return;
+    }
     console.error(error);
     if(cached){
       host.innerHTML=weatherCardHTML({...cached,mode:"ready",offline:true});
