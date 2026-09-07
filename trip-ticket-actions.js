@@ -56,7 +56,8 @@
           button.textContent = 'Open Tickets';
           button.addEventListener('click', () => openWalletItem(match.key));
         } else {
-          button.textContent = 'View in Wallet';
+          const isFoodTour = day.date === '2026-09-20' && /trastevere.*tiber island.*street food tour/i.test(event.title || '');
+          button.textContent = isFoodTour ? 'Add Ticket' : 'View in Wallet';
           button.addEventListener('click', () => openWalletItem(match.key));
         }
 
