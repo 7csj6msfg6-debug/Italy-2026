@@ -2,16 +2,15 @@
   const DATE = '2026-09-23';
   const TITLE = '📸 Romantic Experience in Rome — Photo Tour';
   const WALLET_TITLE = 'Romantic Experience in Rome — Photo Tour';
-  const MAP = 'https://www.google.com/maps/search/?api=1&query=Caff%C3%A8+Roma+00197+Roma+RM+Italia';
+  const MAP = 'https://www.google.com/maps/place/Caff%C3%A8+Roma,+Via+del+Colosseo,+31a,+00184+Roma+RM,+Italy/@41.891608,12.4909512,16z/data=!4m6!3m5!1s0x132f61df7f8ca7cf:0xf6d49254186db239!8m2!3d41.891608!4d12.4909512!16s%2Fg%2F11js2tr7fz?g_ep=Eg1tbF8yMDI2MDkxM18wIJvbDyoASAJQAg%3D%3D';
   const day = (window.TRIP_DATA || []).find(item => item.date === DATE);
 
   if (day) {
-    // Keep every planned Sept. 23 stop, but shift the visual timeline around the fixed 9:00–10:00 AM photoshoot.
     day.title = 'North-Central Rome, Jewish Ghetto and Aventine';
     day.events = [
       {time:'8:00 AM',title:'Breakfast',note:'Have an earlier relaxed breakfast so you can reach the photoshoot meeting point without rushing.'},
-      {time:'8:30 AM',title:'Ride to Caffè Roma',note:'Head to the photoshoot meeting point and aim to arrive by 8:50 AM.',map:MAP},
-      {time:'9:00–10:00 AM',title:TITLE,note:'Booked private photo tour for 2 people, approximately 1 hour. Meet at Caffè Roma by 8:50 AM. PRINT the voucher: mobile tickets are not accepted. The activity ends at the starting point.',status:'Booked',map:MAP},
+      {time:'8:30 AM',title:'Ride to Caffè Roma',note:'Head to Caffè Roma, Via del Colosseo 31a, and aim to arrive by 8:50 AM.',map:MAP},
+      {time:'9:00–10:00 AM',title:TITLE,note:'Booked private photo tour for 2 people, approximately 1 hour. Meet at Caffè Roma, Via del Colosseo 31a, by 8:50 AM. PRINT the voucher: mobile tickets are not accepted. The activity ends at the starting point.',status:'Booked',map:MAP},
       {time:'10:00–10:15 AM',title:'Transition to Piazza del Popolo',note:'Continue to the northern sightseeing route after the photoshoot.',map:'https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Rome'},
       {time:'10:15–10:45 AM',title:'Piazza del Popolo',note:'Explore the piazza, fountains, churches and obelisk.',map:'https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Rome'},
       {time:'10:45–11:15 AM',title:'Pincian Terrace',note:'Walk up to Terrazza del Pincio for panoramic views.',map:'https://www.google.com/maps/search/?api=1&query=Terrazza+del+Pincio+Rome'},
@@ -32,13 +31,10 @@
 
   const groups = window.TICKET_WALLET || [];
   let tours = groups.find(group => group.group === 'Tours');
-  if (!tours) {
-    tours = {group:'Tours', icon:'🍷', items:[]};
-    groups.push(tours);
-  }
+  if (!tours) { tours = {group:'Tours', icon:'🍷', items:[]}; groups.push(tours); }
   const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   if (!tours.items.some(item => normalize(item.title) === normalize(WALLET_TITLE))) {
-    tours.items.push({title:WALLET_TITLE,date:'Sep 23',time:'9:00 AM',status:'Ticket needed',details:'Booked · 2 people · 1 hour · Meet at Caffè Roma by 8:50 AM',note:'Upload your GetYourGuide voucher here. Print the voucher before the session: mobile tickets are not accepted.',map:MAP,mapLabel:'Meeting point'});
+    tours.items.push({title:WALLET_TITLE,date:'Sep 23',time:'9:00 AM',status:'Ticket needed',details:'Booked · 2 people · 1 hour · Meet at Caffè Roma, Via del Colosseo 31a, by 8:50 AM',note:'Upload your GetYourGuide voucher here. Print the voucher before the session: mobile tickets are not accepted.',map:MAP,mapLabel:'Meeting point'});
   }
 
   if (!window.__photoshootTicketMatchPatched && typeof window.findWalletMatchForEvent === 'function') {
