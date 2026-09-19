@@ -1,6 +1,6 @@
-const CACHE = 'italy-2026-app-v46';
+const CACHE = 'italy-2026-app-v47';
 const APP_SHELL = [
-  './','./index.html','./style.css','./app.js','./rome-itinerary-update.js','./food-tour-ticket-update.js','./pompeii-meeting-point-update.js','./transport-wallet-maps-update.js','./navigation-state.js','./history-aware-back.js','./today-polish.js','./wallet-polish.js','./wallet-reliability.js','./wallet-backup.js','./ticket-open.js','./today-ticket-actions.js','./calendar-icon-polish.js','./guide-collapse-default.js','./nearby-guide-focus.js','./trip-ticket-actions.js','./app-status.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'
+  './','./index.html','./style.css','./app.js','./rome-itinerary-update.js','./food-tour-ticket-update.js','./sept21-photoshoot-update.js','./pompeii-meeting-point-update.js','./transport-wallet-maps-update.js','./navigation-state.js','./history-aware-back.js','./today-polish.js','./wallet-polish.js','./wallet-reliability.js','./wallet-backup.js','./ticket-open.js','./today-ticket-actions.js','./calendar-icon-polish.js','./guide-collapse-default.js','./nearby-guide-focus.js','./trip-ticket-actions.js','./app-status.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'
 ];
 const PDFJS_ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
@@ -115,9 +115,14 @@ self.addEventListener('fetch',event=>{
       if(cached)return cached;
       try{
         const response=await fetch(request);
-        if(response&&response.ok){const cache=await caches.open(CACHE);await cache.put(request,response.clone());}
+        if(response&&response.ok){
+          const cache=await caches.open(CACHE);
+          await cache.put(request,response.clone());
+        }
         return response;
-      }catch{return Response.error();}
+      }catch{
+        return Response.error();
+      }
     })());
     return;
   }
@@ -125,7 +130,10 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
 
   const ticketId=ticketIdFromUrl(url);
-  if(ticketId!==null){event.respondWith(serveTicket(request,ticketId));return;}
+  if(ticketId!==null){
+    event.respondWith(serveTicket(request,ticketId));
+    return;
+  }
 
   if(request.mode==='navigate'){
     event.respondWith((async()=>{try{const response=await fetch(request);if(response&&response.ok){const cache=await caches.open(CACHE);cache.put('./index.html',response.clone())}return response}catch{return(await caches.match(request))||(await caches.match('./index.html'))||(await caches.match('./'))}})());
