@@ -115,9 +115,14 @@ self.addEventListener('fetch',event=>{
       if(cached)return cached;
       try{
         const response=await fetch(request);
-        if(response&&response.ok){const cache=await caches.open(CACHE);await cache.put(request,response.clone());}
+        if(response&&response.ok){
+          const cache=await caches.open(CACHE);
+          await cache.put(request,response.clone());
+        }
         return response;
-      }catch{return Response.error();}
+      }catch{
+        return Response.error();
+      }
     })());
     return;
   }
@@ -125,7 +130,10 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
 
   const ticketId=ticketIdFromUrl(url);
-  if(ticketId!==null){event.respondWith(serveTicket(request,id=ticketId));return;}
+  if(ticketId!==null){
+    event.respondWith(serveTicket(request,ticketId));
+    return;
+  }
 
   if(request.mode==='navigate'){
     event.respondWith((async()=>{try{const response=await fetch(request);if(response&&response.ok){const cache=await caches.open(CACHE);cache.put('./index.html',response.clone())}return response}catch{return(await caches.match(request))||(await caches.match('./index.html'))||(await caches.match('./'))}})());
