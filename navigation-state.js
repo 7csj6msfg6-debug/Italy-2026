@@ -83,15 +83,27 @@
     clickSavedButton("[data-guide-section]", "guideSection", read("guide-section", "places"));
   }
 
+  function currentTripDay() {
+    const days = window.TRIP_DATA || [];
+    if (!days.length) return null;
+    const now = new Date();
+    const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
+    return days.find(day => day.date === today) || (today < days[0].date ? days[0] : days[days.length - 1]);
+  }
+
   function restoreTripState() {
-    const cityButton = clickSavedButton("[data-city-filter]", "cityFilter", read("trip-filter", "All"));
-    if (cityButton) requestAnimationFrame(() => window.centerTripCityFilter?.(cityButton, "auto"));
-    const date = read("trip-day", "");
-    if (!date) return;
+    const day = currentTripDay();
+    if (!day) return;
+    const cityButton = clickSavedButton("[data-city-filter]", "cityFilter", day.city);
     const cards = [...document.querySelectorAll("#tripCards .day-card")];
-    const target = cards.find(card => card.querySelector(`[data-route-date="${CSS.escape(date)}"]`));
-    if (!target) return;
-    cards.forEach(card => card.classList.toggle("open", card === target));
+    const target = cards.find(card => card.querySelector(`[data-route-date="${CSS.escape(day.date)}"]`));
+    if (target) cards.forEach(card => card.classList.toggle("open", card === target));
+    requestAnimationFrame(() => {
+      if (cityButton) window.centerTripCityFilter?.(cityButton, "auto");
+      if (!target || currentView() !== "trip") return;
+      cancelScrollRestore();
+      target.scrollIntoView({ behavior: "auto", block: "start" });
+    });
   }
 
   let restoringScroll = false;
@@ -210,6 +222,7 @@
       }
       originalShowView(target, updateTab);
       syncPrimaryTab(target);
+      if (target === "wallet") requestAnimationFrame(() => window.focusNextWalletReservation?.());
       if (!handlingHistory && previous !== target) history.pushState({ italyView: target }, "");
     };
 
