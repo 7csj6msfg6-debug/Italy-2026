@@ -683,16 +683,34 @@ function renderHome(selectedDate){
   document.dispatchEvent(new CustomEvent("italy:home-rendered",{detail:{date:day.date}}));
 }
 
+function syncTripCityFilterGutters(row){
+  const buttons=[...row.querySelectorAll("[data-city-filter]")];
+  if(!buttons.length)return;
+  row.style.setProperty("--trip-filter-leading",Math.max(0,row.clientWidth/2-buttons[0].offsetWidth/2)+"px");
+  row.style.setProperty("--trip-filter-trailing",Math.max(0,row.clientWidth/2-buttons[buttons.length-1].offsetWidth/2)+"px");
+}
+function centerTripCityFilter(button,behavior="smooth"){
+  const row=button?.closest(".trip-city-filters");
+  if(!row)return;
+  syncTripCityFilterGutters(row);
+  const rowBox=row.getBoundingClientRect();
+  const buttonBox=button.getBoundingClientRect();
+  const left=row.scrollLeft+(buttonBox.left-rowBox.left)+buttonBox.width/2-row.clientWidth/2;
+  row.scrollTo({left,behavior});
+}
+window.centerTripCityFilter=centerTripCityFilter;
+
 function renderTrip(){
   const cities=["All","Flights","Venice","Florence","Rome","Naples","Capri"];
   qs("#trip").innerHTML=`
     <div class="section-title"><h2>Full itinerary</h2><span class="small">Sep 14–27</span></div>
-    <div class="filters">${cities.map((c,i)=>`<button class="chip ${i===0?"active":""}" data-city-filter="${c}">${c}</button>`).join("")}</div>
+    <div class="filters trip-city-filters">${cities.map((c,i)=>`<button class="chip ${i===0?"active":""}" data-city-filter="${c}">${c}</button>`).join("")}</div>
     <div id="tripCards">${trip.map((d,i)=>dayCard(d,i===0)).join("")}</div>`;
   qsa("[data-city-filter]").forEach(btn=>btn.addEventListener("click",()=>{
     qsa("[data-city-filter]").forEach(x=>x.classList.remove("active"));
     btn.classList.add("active");
     qsa("#tripCards .day-card").forEach(card=>card.classList.toggle("hidden",btn.dataset.cityFilter!=="All"&&card.dataset.city!==btn.dataset.cityFilter));
+    centerTripCityFilter(btn);
   }));
   bindDayCards();
   document.dispatchEvent(new CustomEvent("italy:trip-rendered"));
