@@ -84,11 +84,9 @@
   }
 
   function currentTripDay() {
+    if (typeof window.tripOpeningDay === "function") return window.tripOpeningDay();
     const days = window.TRIP_DATA || [];
-    if (!days.length) return null;
-    const now = new Date();
-    const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
-    return days.find(day => day.date === today) || (today < days[0].date ? days[0] : days[days.length - 1]);
+    return days[0] || null;
   }
 
   function restoreTripState() {
