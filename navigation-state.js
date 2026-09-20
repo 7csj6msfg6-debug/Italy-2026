@@ -68,10 +68,11 @@
   }
 
   function clickSavedButton(selector, dataName, value) {
-    if (!value) return;
+    if (!value) return null;
     const button = [...document.querySelectorAll(selector)]
       .find(item => item.dataset[dataName] === value);
     if (button && !button.classList.contains("active")) button.click();
+    return button || null;
   }
 
   function restoreGuideState() {
@@ -83,7 +84,8 @@
   }
 
   function restoreTripState() {
-    clickSavedButton("[data-city-filter]", "cityFilter", read("trip-filter", "All"));
+    const cityButton = clickSavedButton("[data-city-filter]", "cityFilter", read("trip-filter", "All"));
+    if (cityButton) requestAnimationFrame(() => window.centerTripCityFilter?.(cityButton, "auto"));
     const date = read("trip-day", "");
     if (!date) return;
     const cards = [...document.querySelectorAll("#tripCards .day-card")];
