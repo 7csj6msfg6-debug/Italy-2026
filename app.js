@@ -560,6 +560,55 @@ function focusWalletCard(key){
   return true;
 }
 window.focusWalletCard=focusWalletCard;
+function walletDateParts(value){
+  const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const match=String(value||"").match(/\b([A-Z][a-z]{2})\s+(\d{1,2})/);
+  if(!match||months[match[1]]===undefined)return null;
+  return {year:2026,month:months[match[1]],day:Number(match[2])};
+}
+function walletTimeMinutes(value){
+  const text=String(value||"").trim();
+  const exact=[...text.matchAll(/\b(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\b/gi)].map(match=>{
+    let hour=Number(match[1]);
+    const minute=Number(match[2]||0);
+    const period=match[3].toUpperCase();
+    if(period==="PM"&&hour!==12)hour+=12;
+    if(period==="AM"&&hour===12)hour=0;
+    return hour*60+minute;
+  });
+  if(exact.length)return [...new Set(exact)];
+  const approximate={"early morning":7*60,"morning":9*60,"midday":12*60,"afternoon":15*60,"evening":19*60};
+  const minutes=approximate[text.toLowerCase()];
+  return minutes===undefined?[]:[minutes];
+}
+function walletReservationOccurrences(){
+  return wallet.flatMap(group=>{
+    if(group.group==="Hotels")return [];
+    return group.items.flatMap(item=>{
+      const date=walletDateParts(item.date);
+      if(!date)return [];
+      return walletTimeMinutes(item.time).map(minutes=>({
+        key:walletItemKey(group.group,item),
+        item,
+        at:new Date(date.year,date.month,date.day,Math.floor(minutes/60),minutes%60)
+      }));
+    });
+  }).sort((a,b)=>a.at-b.at);
+}
+function nextWalletReservationKey(now=new Date()){
+  const occurrences=walletReservationOccurrences();
+  const graceMs=3*60*60*1000;
+  const recent=occurrences.filter(entry=>entry.at<=now&&now-entry.at<=graceMs).at(-1);
+  const upcoming=occurrences.find(entry=>entry.at>now);
+  return (recent||upcoming||occurrences.at(-1))?.key||"";
+}
+function focusNextWalletReservation(){
+  if(pendingWalletTarget||qs("#wallet")?.classList.contains("hidden"))return false;
+  const key=nextWalletReservationKey();
+  return key?focusWalletCard(key):false;
+}
+window.nextWalletReservationKey=nextWalletReservationKey;
+window.focusNextWalletReservation=focusNextWalletReservation;
 async function openWalletForEvent(day,event){
   const match=findWalletMatchForEvent(day,event);
   pendingWalletTarget=match?match.key:"";
