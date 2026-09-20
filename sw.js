@@ -1,4 +1,4 @@
-const CACHE = 'italy-2026-app-v51';
+const CACHE = 'italy-2026-app-v52';
 const APP_SHELL = [
   './','./index.html','./style.css','./app.js','./rome-itinerary-update.js','./sept23-pantheon-update.js','./sept23-pantheon-ticket-update.js','./food-tour-ticket-update.js','./sept21-photoshoot-update.js','./pompeii-meeting-point-update.js','./transport-wallet-maps-update.js','./navigation-state.js','./history-aware-back.js','./today-polish.js','./wallet-polish.js','./wallet-reliability.js','./wallet-backup.js','./ticket-open.js','./today-ticket-actions.js','./calendar-icon-polish.js','./guide-collapse-default.js','./nearby-guide-focus.js','./trip-ticket-actions.js','./app-status.js','./trip-data.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'
 ];
