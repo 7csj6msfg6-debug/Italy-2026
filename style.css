@@ -148,6 +148,9 @@ h3{font-size:17px;margin:18px 0 10px}
   scrollbar-width:none;
 }
 .filters::-webkit-scrollbar,.guide-tabs::-webkit-scrollbar{display:none}
+.trip-city-filters::before,.trip-city-filters::after{content:"";flex:0 0 0}
+.trip-city-filters::before{flex-basis:var(--trip-filter-leading,0)}
+.trip-city-filters::after{flex-basis:var(--trip-filter-trailing,0)}
 .chip{
   flex:none;
   border:1px solid var(--line);
