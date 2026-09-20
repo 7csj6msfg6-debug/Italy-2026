@@ -732,6 +732,20 @@ function renderHome(selectedDate){
   document.dispatchEvent(new CustomEvent("italy:home-rendered",{detail:{date:day.date}}));
 }
 
+function tripOpeningDay(date=todayISO()){
+  if(!trip.length)return null;
+  if(date<trip[0].date)return trip[0];
+  if(date>trip[trip.length-1].date)return trip[trip.length-1];
+  const start=trip.findIndex(day=>day.date>=date);
+  for(let index=Math.max(0,start);index<trip.length;index++){
+    const day=trip[index];
+    const complete=day.events.length>0&&day.events.every((event,eventIndex)=>isDone(eventId(day,event,eventIndex)));
+    if(!complete)return day;
+  }
+  return trip[trip.length-1];
+}
+window.tripOpeningDay=tripOpeningDay;
+
 function syncTripCityFilterGutters(row){
   const buttons=[...row.querySelectorAll("[data-city-filter]")];
   if(!buttons.length)return;
