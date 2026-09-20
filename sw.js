@@ -131,7 +131,7 @@ self.addEventListener('fetch',event=>{
 
   const ticketId=ticketIdFromUrl(url);
   if(ticketId!==null){
-    event.respondWith(serveTicket(request,id));
+    event.respondWith(serveTicket(request,ticketId));
     return;
   }
 
