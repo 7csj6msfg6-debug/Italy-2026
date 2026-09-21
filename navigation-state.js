@@ -96,11 +96,12 @@
     const cards = [...document.querySelectorAll("#tripCards .day-card")];
     const target = cards.find(card => card.querySelector(`[data-route-date="${CSS.escape(day.date)}"]`));
     if (target) cards.forEach(card => card.classList.toggle("open", card === target));
+    const nextEvent = target?.querySelector(".event:not(.done)") || null;
     requestAnimationFrame(() => {
       if (cityButton) window.centerTripCityFilter?.(cityButton, "auto");
       if (!target || currentView() !== "trip") return;
       cancelScrollRestore();
-      target.scrollIntoView({ behavior: "auto", block: "start" });
+      (nextEvent || target).scrollIntoView({ behavior: "auto", block: nextEvent ? "center" : "start" });
     });
   }
 
