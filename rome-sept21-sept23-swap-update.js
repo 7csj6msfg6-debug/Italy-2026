@@ -28,8 +28,7 @@
     nightArrival = day.events.find(event => event.title === arrivalTitle);
     day.events = day.events.filter(event => event !== nightTour && event !== nightArrival);
     day.title = 'Ancient Rome — Colosseum, Forum and Aventine';
-    // The user confirmed visiting these on Sept. 21 but did not give visit times.
-    // Put retrospective checkable entries in the old tour slot, without inventing times.
+    // Visit dates are known, but visit times are not; add checkable retrospective stops.
     const insertAt = day.events.findIndex(event => event.title === 'Free evening');
     if (!day.events.some(event => event.title === gardenTitle)) {
       day.events.splice(insertAt < 0 ? day.events.length : insertAt, 0,
@@ -38,7 +37,10 @@
       );
     }
     const evening = day.events.find(event => event.title === 'Free evening');
-    if (evening) evening.note = 'No night tour tonight: it is now scheduled for Sept. 23. Rest or enjoy a relaxed evening.';
+    if (evening) {
+      evening.time = 'Evening';
+      evening.note = 'No night tour tonight: it is now scheduled for Sept. 23. Rest or enjoy a relaxed evening.';
+    }
   });
 
   editDay(sept23, day => {
@@ -56,7 +58,7 @@
     }
   });
 
-  // Keep the existing Wallet reservation and its local ticket files when its date changes.
+  // Keep the existing Wallet reservation and relink local attachments when its date changes.
   const tours = (window.TICKET_WALLET || []).find(group => group.group === 'Tours');
   const reservation = tours?.items?.find(item => item.title === 'Big Bus Rome Panoramic Night Tour');
   if (reservation) {
